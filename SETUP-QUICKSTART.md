@@ -15,29 +15,29 @@ That's it! The script will guide you through the rest.
 The script will prompt you for:
 
 1. **Repository name** (e.g., `cmp-mediaviewer`)
-   - Usually your GitHub repo name
+    - Usually your GitHub repo name
 
 2. **Artifact name** (e.g., `mediaviewer`)
-   - The name used in Maven dependencies
-   - Default: repo name without `cmp-` prefix
+    - The name used in Maven dependencies
+    - Default: repo name without `cmp-` prefix
 
 3. **GitHub username/org** (e.g., `johnsmith`)
-   - Your GitHub username or organization
+    - Your GitHub username or organization
 
 4. **Maven group ID** (e.g., `io.github.johnsmith`)
-   - Follows reverse domain convention
-   - Default: `io.github.<your-username>`
+    - Follows reverse domain convention
+    - Default: `io.github.<your-username>`
 
 5. **Developer name** (e.g., `John Smith`)
-   - Your name for POM metadata
+    - Your name for POM metadata
 
 6. **Library description** (e.g., `A media viewer for Compose Multiplatform`)
-   - Brief description for Maven Central
+    - Brief description for Maven Central
 
 7. **Initial version** (e.g., `0.0.1`)
-   - Starting version for your library
-   - Default: `0.0.1`
-   - Press Enter for default or enter custom (e.g., `1.0.0`)
+    - Starting version for your library
+    - Default: `0.0.1`
+    - Press Enter for default or enter custom (e.g., `1.0.0`)
 
 ---
 
@@ -47,7 +47,7 @@ The script will prompt you for:
 ✅ Updates `lib/build.gradle.kts` with Maven coordinates and version  
 ✅ Creates your package: `lib/src/commonMain/kotlin/io/github/yourname/yourlib/`  
 ✅ Updates all documentation with your project info  
-✅ Keeps example `fiblib` code as reference  
+✅ Keeps example `fiblib` code as reference
 
 ---
 
@@ -79,6 +79,7 @@ It will show your current config and let you reconfigure.
 ## Windows Users
 
 Use one of these:
+
 - **Git Bash** (recommended): `./setup-template.sh`
 - **WSL**: `./setup-template.sh`
 - **Command Prompt**: `setup-template.bat` (basic)

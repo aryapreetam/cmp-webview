@@ -5,9 +5,9 @@ agp = "8.10.0"
 maven-publish = "0.34.0"
 compose = "1.9.0"
 androidx-activityCompose = "1.10.1"
-hot-reload="1.0.0-rc02"
+hot-reload = "1.0.0-rc02"
 dokka = "2.1.0-Beta"
-compose-webview="0.33.6"
+compose-webview = "0.33.6"
 kotlinx-coroutines = "1.10.2"
 os-detector = "1.7.3"
 
@@ -26,6 +26,6 @@ maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "maven-publ
 compose = { id = "org.jetbrains.compose", version.ref = "compose" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 android-application = { id = "com.android.application", version.ref = "agp" }
-composeHotReload = { id = "org.jetbrains.compose.hot-reload", version.ref = "hot-reload"}
+composeHotReload = { id = "org.jetbrains.compose.hot-reload", version.ref = "hot-reload" }
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 os-detector = { id = "com.google.osdetector", version.ref = "os-detector" }

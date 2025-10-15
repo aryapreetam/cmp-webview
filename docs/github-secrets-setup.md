@@ -8,13 +8,13 @@ This guide walks you through setting up all required GitHub secrets for automate
 
 Your CI/CD pipeline requires 5 secrets to publish to Maven Central:
 
-| Secret Name | Purpose | Example |
-|------------|---------|---------|
-| `MAVEN_CENTRAL_USERNAME` | Sonatype account username | `john.doe` |
-| `MAVEN_CENTRAL_PASSWORD` | Sonatype account password/token | `MySecureP@ssword123` |
-| `SIGNING_KEY_ID` | Last 8 chars of GPG key ID | `ABCD1234` |
-| `SIGNING_PASSWORD` | GPG key passphrase | `MyGPGPassphrase` |
-| `GPG_KEY_CONTENTS` | ASCII-armored private GPG key | `-----BEGIN PGP PRIVATE...` |
+| Secret Name              | Purpose                         | Example                     |
+|--------------------------|---------------------------------|-----------------------------|
+| `MAVEN_CENTRAL_USERNAME` | Sonatype account username       | `john.doe`                  |
+| `MAVEN_CENTRAL_PASSWORD` | Sonatype account password/token | `MySecureP@ssword123`       |
+| `SIGNING_KEY_ID`         | Last 8 chars of GPG key ID      | `ABCD1234`                  |
+| `SIGNING_PASSWORD`       | GPG key passphrase              | `MyGPGPassphrase`           |
+| `GPG_KEY_CONTENTS`       | ASCII-armored private GPG key   | `-----BEGIN PGP PRIVATE...` |
 
 ---
 
@@ -32,11 +32,11 @@ Your CI/CD pipeline requires 5 secrets to publish to Maven Central:
 1. After login, click your profile → "View Namespaces"
 2. Click "Add Namespace"
 3. For GitHub-based publishing, use: `io.github.yourusername`
-   - Replace `yourusername` with your **actual GitHub username**
+    - Replace `yourusername` with your **actual GitHub username**
 4. Choose verification method: **GitHub Repository**
 5. Follow instructions to verify:
-   - Create a public repository named exactly as instructed (e.g., `OSSRH-12345`)
-   - Or add the verification code to your repo description
+    - Create a public repository named exactly as instructed (e.g., `OSSRH-12345`)
+    - Or add the verification code to your repo description
 6. Click "Verify Namespace"
 7. Wait for approval (usually instant for GitHub verification)
 
@@ -95,6 +95,7 @@ gpg --list-secret-keys --keyid-format=long
 ```
 
 Output looks like:
+
 ```
 /Users/yourname/.gnupg/secring.gpg
 -----------------------------------
@@ -137,6 +138,7 @@ gpg --keyserver keyserver.ubuntu.com --recv-keys ABCD1234EFGH5678
 You should see: "key ABCD1234EFGH5678: "John Doe <john.doe@example.com>" not changed"
 
 **Alternative keyservers** (if ubuntu keyserver is down):
+
 ```bash
 gpg --keyserver keys.openpgp.org --send-keys ABCD1234EFGH5678
 # or
@@ -189,11 +191,13 @@ Add the following 5 secrets one by one:
 - **Value**: Contents of the `private-key.asc` file
 
 To get the value:
+
 ```bash
 cat private-key.asc
 ```
 
 Copy the **entire output** including the BEGIN and END lines:
+
 ```
 -----BEGIN PGP PRIVATE KEY BLOCK-----
 
@@ -209,6 +213,7 @@ lQdGBGX...
 ### 3.3 Verify All Secrets
 
 After adding all secrets, you should see 5 secrets listed:
+
 - ✅ GPG_KEY_CONTENTS
 - ✅ MAVEN_CENTRAL_PASSWORD
 - ✅ MAVEN_CENTRAL_USERNAME
@@ -224,6 +229,7 @@ After adding all secrets, you should see 5 secrets listed:
 Before testing in CI, you can test publishing locally:
 
 Add to `~/.gradle/gradle.properties`:
+
 ```properties
 signing.keyId=EFGH5678
 signing.password=YourGPGPassphrase
@@ -234,6 +240,7 @@ mavenCentralPassword=your-sonatype-password
 ```
 
 Then test:
+
 ```bash
 ./gradlew :lib:publishToMavenLocal
 ```
@@ -254,11 +261,13 @@ git push origin v0.0.1-test
 ```
 
 Monitor the workflow:
+
 1. Go to **Actions** tab
 2. Watch "Publish Multiplatform Release" workflow
 3. Check each job passes
 
 If the `publish-to-maven-central` job fails, check:
+
 - All 5 secrets are correctly set
 - GPG key was uploaded to keyserver
 - Sonatype namespace is verified
@@ -272,7 +281,8 @@ If the `publish-to-maven-central` job fails, check:
 
 **Cause**: Namespace not verified in Sonatype
 
-**Solution**: 
+**Solution**:
+
 1. Log into https://central.sonatype.com/
 2. Go to your namespaces
 3. Verify your `io.github.yourname` namespace
@@ -282,6 +292,7 @@ If the `publish-to-maven-central` job fails, check:
 **Cause**: GPG public key not on keyserver
 
 **Solution**:
+
 ```bash
 gpg --keyserver keyserver.ubuntu.com --send-keys YOUR_KEY_ID
 ```
@@ -293,6 +304,7 @@ Wait 5-10 minutes for keyserver sync.
 **Cause**: `SIGNING_PASSWORD` doesn't match your GPG key passphrase
 
 **Solution**:
+
 1. Test your passphrase locally:
    ```bash
    echo "test" | gpg --clearsign --local-user YOUR_KEY_ID
@@ -304,6 +316,7 @@ Wait 5-10 minutes for keyserver sync.
 **Cause**: Wrong Sonatype credentials
 
 **Solution**:
+
 1. Verify credentials at https://central.sonatype.com/
 2. Update `MAVEN_CENTRAL_USERNAME` and `MAVEN_CENTRAL_PASSWORD`
 3. Consider using token instead of password
@@ -313,6 +326,7 @@ Wait 5-10 minutes for keyserver sync.
 **Cause**: `GPG_KEY_CONTENTS` was not copied correctly
 
 **Solution**:
+
 1. Re-export the key:
    ```bash
    gpg --export-secret-keys --armor YOUR_KEY_ID > private-key.asc
@@ -325,24 +339,24 @@ Wait 5-10 minutes for keyserver sync.
 ## 🔒 Security Best Practices
 
 1. **Never commit secrets to Git**
-   - Don't commit `private-key.asc` or `gradle.properties` with credentials
-   - Add them to `.gitignore`
+    - Don't commit `private-key.asc` or `gradle.properties` with credentials
+    - Add them to `.gitignore`
 
 2. **Use tokens instead of passwords**
-   - Sonatype tokens can be revoked without changing your password
-   - More secure for CI/CD
+    - Sonatype tokens can be revoked without changing your password
+    - More secure for CI/CD
 
 3. **Rotate keys periodically**
-   - Update GPG keys and passwords every 1-2 years
-   - Update GitHub secrets when rotating
+    - Update GPG keys and passwords every 1-2 years
+    - Update GitHub secrets when rotating
 
 4. **Limit secret access**
-   - Only grant repository access to trusted collaborators
-   - Use GitHub environments for additional protection
+    - Only grant repository access to trusted collaborators
+    - Use GitHub environments for additional protection
 
 5. **Backup your GPG key**
-   - Save `private-key.asc` to a secure location
-   - If you lose it, you can't sign with the same key
+    - Save `private-key.asc` to a secure location
+    - If you lose it, you can't sign with the same key
 
 ---
 

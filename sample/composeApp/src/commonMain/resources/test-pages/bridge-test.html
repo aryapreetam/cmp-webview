@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bridge Communication Test</title>
+  <style>
+      body {
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+          padding: 20px;
+          max-width: 600px;
+          margin: 0 auto;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+      }
+
+      .container {
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 12px;
+          padding: 20px;
+          backdrop-filter: blur(10px);
+          box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+      }
+
+      h1 {
+          margin-top: 0;
+          font-size: 24px;
+      }
+
+      button {
+          background: white;
+          color: #667eea;
+          border: none;
+          padding: 12px 24px;
+          border-radius: 8px;
+          font-size: 16px;
+          font-weight: 600;
+          cursor: pointer;
+          margin: 8px 0;
+          width: 100%;
+          transition: all 0.3s ease;
+      }
+
+      button:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      }
+
+      button:active {
+          transform: translateY(0);
+      }
+
+      .status {
+          margin-top: 20px;
+          padding: 12px;
+          background: rgba(255, 255, 255, 0.2);
+          border-radius: 8px;
+          font-size: 14px;
+      }
+
+      .success {
+          background: rgba(72, 187, 120, 0.3);
+      }
+
+      .error {
+          background: rgba(245, 101, 101, 0.3);
+      }
+
+      input {
+          width: 100%;
+          padding: 12px;
+          border: none;
+          border-radius: 8px;
+          margin: 8px 0;
+          box-sizing: border-box;
+          font-size: 16px;
+      }
+
+      .counter-display {
+          font-size: 48px;
+          text-align: center;
+          margin: 20px 0;
+          font-weight: bold;
+      }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>🌉 Bridge Communication Test</h1>
+
+  <div id="status" class="status">
+    Waiting for bridge to be ready...
+  </div>
+
+  <h2>Basic Message Test</h2>
+  <button onclick="sendSimpleMessage()">Send Simple Message</button>
+
+  <h2>JSON Message Test</h2>
+  <input type="text" id="nameInput" placeholder="Enter your name" value="Test User">
+  <button onclick="sendJsonMessage()">Send JSON Message</button>
+
+  <h2>Counter Test</h2>
+  <div class="counter-display" id="counter">0</div>
+  <button onclick="incrementCounter()">Increment Counter</button>
+  <button onclick="resetCounter()">Reset Counter</button>
+
+  <h2>Stress Test</h2>
+  <button onclick="sendRapidMessages()">Send 100 Messages Rapidly</button>
+  <div id="rapidStatus"></div>
+</div>
+
+<script>
+  let bridgeReady = false;
+  let counter = 0;
+
+  // Listen for bridge ready event
+  document.addEventListener('ComposeWebViewBridgeReady', function () {
+    bridgeReady = true;
+    updateStatus('✅ Bridge is ready!', 'success');
+    console.log('ComposeWebViewBridge is ready');
+  });
+
+  function updateStatus(message, type = '') {
+    const statusDiv = document.getElementById('status');
+    statusDiv.textContent = message;
+    statusDiv.className = 'status ' + type;
+  }
+
+  function sendSimpleMessage() {
+    if (!window.ComposeWebViewBridge) {
+      updateStatus('❌ Bridge not available', 'error');
+      return;
+    }
+
+    try {
+      window.ComposeWebViewBridge.postMessage('Hello from JavaScript!');
+      updateStatus('✅ Simple message sent', 'success');
+    } catch (error) {
+      updateStatus('❌ Error: ' + error.message, 'error');
+    }
+  }
+
+  function sendJsonMessage() {
+    if (!window.ComposeWebViewBridge) {
+      updateStatus('❌ Bridge not available', 'error');
+      return;
+    }
+
+    const name = document.getElementById('nameInput').value;
+    const message = JSON.stringify({
+      type: 'user_info',
+      name: name,
+      timestamp: new Date().toISOString(),
+      platform: navigator.platform
+    });
+
+    try {
+      window.ComposeWebViewBridge.postMessage(message);
+      updateStatus('✅ JSON message sent for: ' + name, 'success');
+    } catch (error) {
+      updateStatus('❌ Error: ' + error.message, 'error');
+    }
+  }
+
+  function incrementCounter() {
+    counter++;
+    document.getElementById('counter').textContent = counter;
+
+    if (!window.ComposeWebViewBridge) {
+      updateStatus('❌ Bridge not available', 'error');
+      return;
+    }
+
+    const message = JSON.stringify({
+      type: 'counter_update',
+      value: counter,
+      action: 'increment'
+    });
+
+    try {
+      window.ComposeWebViewBridge.postMessage(message);
+      updateStatus('✅ Counter: ' + counter, 'success');
+    } catch (error) {
+      updateStatus('❌ Error: ' + error.message, 'error');
+    }
+  }
+
+  function resetCounter() {
+    counter = 0;
+    document.getElementById('counter').textContent = counter;
+
+    if (!window.ComposeWebViewBridge) {
+      updateStatus('❌ Bridge not available', 'error');
+      return;
+    }
+
+    const message = JSON.stringify({
+      type: 'counter_update',
+      value: counter,
+      action: 'reset'
+    });
+
+    try {
+      window.ComposeWebViewBridge.postMessage(message);
+      updateStatus('✅ Counter reset', 'success');
+    } catch (error) {
+      updateStatus('❌ Error: ' + error.message, 'error');
+    }
+  }
+
+  function sendRapidMessages() {
+    if (!window.ComposeWebViewBridge) {
+      updateStatus('❌ Bridge not available', 'error');
+      return;
+    }
+
+    const startTime = performance.now();
+    const rapidStatusDiv = document.getElementById('rapidStatus');
+    rapidStatusDiv.textContent = 'Sending 100 messages...';
+
+    try {
+      for (let i = 1; i <= 100; i++) {
+        const message = JSON.stringify({
+          type: 'stress_test',
+          messageNumber: i,
+          timestamp: Date.now()
+        });
+        window.ComposeWebViewBridge.postMessage(message);
+      }
+
+      const endTime = performance.now();
+      const duration = (endTime - startTime).toFixed(2);
+
+      updateStatus('✅ 100 messages sent in ' + duration + 'ms', 'success');
+      rapidStatusDiv.textContent = '✅ Completed in ' + duration + 'ms';
+      rapidStatusDiv.style.color = '#48bb78';
+    } catch (error) {
+      updateStatus('❌ Error: ' + error.message, 'error');
+      rapidStatusDiv.textContent = '❌ Failed: ' + error.message;
+      rapidStatusDiv.style.color = '#f56565';
+    }
+  }
+
+  // Check if bridge is already available
+  if (window.ComposeWebViewBridge) {
+    bridgeReady = true;
+    updateStatus('✅ Bridge is ready!', 'success');
+  }
+</script>
+</body>
+</html>
+

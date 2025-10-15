@@ -41,6 +41,7 @@ We provide an interactive setup script that configures everything for you!
 ```
 
 The script will prompt you for:
+
 - Repository name (e.g., `cmp-mediaviewer`)
 - Maven artifact name (e.g., `mediaviewer`)
 - GitHub username/organization
@@ -50,6 +51,7 @@ The script will prompt you for:
 - Initial version (default: `0.0.1`)
 
 **What it does automatically:**
+
 - ✅ Updates `settings.gradle.kts` with your project name
 - ✅ Updates `lib/build.gradle.kts` with your Maven coordinates, version, and URLs
 - ✅ Updates `CONTRIBUTING.md` and `README.MD` with your project info
@@ -58,6 +60,7 @@ The script will prompt you for:
 - ✅ Saves configuration to `.template-config.json` (for re-runs)
 
 **Example run:**
+
 ```bash
 $ ./setup-template.sh
 
@@ -87,6 +90,7 @@ Maven group ID:       io.github.johnsmith
 ### **Windows Users:**
 
 For Windows, you have a few options:
+
 - **Git Bash:** Run `./setup-template.sh` (recommended)
 - **WSL (Windows Subsystem for Linux):** Run `./setup-template.sh`
 - **Basic batch script:** Run `setup-template.bat` (limited functionality)
@@ -94,6 +98,7 @@ For Windows, you have a few options:
 ### **Re-running the Setup:**
 
 Made a mistake? No problem! The script can be run multiple times:
+
 ```bash
 ./setup-template.sh
 ```
@@ -114,16 +119,16 @@ After running the setup script:
 2. **Add your library code** in the new package directory
 
 3. **Keep or delete the `fiblib` example:**
-   - The `fiblib` package is kept as a working reference
-   - Delete it when you're ready:
-     ```bash
-     rm -rf lib/src/commonMain/kotlin/fiblib
-     rm -rf lib/src/commonTest/kotlin/fiblib
-     ```
+    - The `fiblib` package is kept as a working reference
+    - Delete it when you're ready:
+      ```bash
+      rm -rf lib/src/commonMain/kotlin/fiblib
+      rm -rf lib/src/commonTest/kotlin/fiblib
+      ```
 
 4. **Update the sample app** to use your library:
-   - Edit `sample/composeApp/src/commonMain/kotlin/sample/app/App.kt`
-   - Replace `import fiblib.*` with your package imports
+    - Edit `sample/composeApp/src/commonMain/kotlin/sample/app/App.kt`
+    - Replace `import fiblib.*` with your package imports
 
 5. **Commit your changes:**
    ```bash
@@ -141,11 +146,13 @@ If you prefer to configure manually without the script:
 ### 4.1 Update Package Names
 
 **In `settings.gradle.kts`:**
+
 ```kotlin
 rootProject.name = "your-repo-name"
 ```
 
 **In `lib/build.gradle.kts`:**
+
 ```kotlin
 android {
   namespace = "io.github.yourname.yourlibname"
@@ -177,6 +184,7 @@ mavenPublishing {
 ### 4.2 Create Package Structure
 
 Create your package directories:
+
 ```bash
 mkdir -p lib/src/commonMain/kotlin/io/github/yourname/yourlibname
 mkdir -p lib/src/commonTest/kotlin/io/github/yourname/yourlibname
@@ -190,6 +198,7 @@ mkdir -p lib/src/commonTest/kotlin/io/github/yourname/yourlibname
 - Find: `io.github.aryapreetam` → Replace: `io.github.yourname`
 
 Files to update:
+
 - `README.MD`
 - `CONTRIBUTING.md`
 - `docs/using-this-template.md` (this file)
@@ -203,7 +212,7 @@ Files to update:
 1. Go to https://central.sonatype.com/
 2. Sign up for an account
 3. Verify your namespace (e.g., `io.github.yourname`)
-   - For GitHub: Use `io.github.yourname` and verify via a public repo
+    - For GitHub: Use `io.github.yourname` and verify via a public repo
 
 ### 5.2 Generate GPG Key
 
@@ -231,15 +240,16 @@ Go to: **Your Repo → Settings → Secrets and variables → Actions → New re
 
 Add these 5 secrets:
 
-| Secret Name | Value | How to Get |
-|------------|-------|------------|
-| `MAVEN_CENTRAL_USERNAME` | Your Sonatype username | From step 5.1 |
-| `MAVEN_CENTRAL_PASSWORD` | Your Sonatype password | From step 5.1 (or generate token) |
-| `SIGNING_KEY_ID` | Last 8 chars of GPG key ID | e.g., `EFGH5678` |
-| `SIGNING_PASSWORD` | Your GPG key passphrase | What you entered when creating key |
-| `GPG_KEY_CONTENTS` | Contents of `private-key.asc` | Copy entire file including BEGIN/END lines |
+| Secret Name              | Value                         | How to Get                                 |
+|--------------------------|-------------------------------|--------------------------------------------|
+| `MAVEN_CENTRAL_USERNAME` | Your Sonatype username        | From step 5.1                              |
+| `MAVEN_CENTRAL_PASSWORD` | Your Sonatype password        | From step 5.1 (or generate token)          |
+| `SIGNING_KEY_ID`         | Last 8 chars of GPG key ID    | e.g., `EFGH5678`                           |
+| `SIGNING_PASSWORD`       | Your GPG key passphrase       | What you entered when creating key         |
+| `GPG_KEY_CONTENTS`       | Contents of `private-key.asc` | Copy entire file including BEGIN/END lines |
 
 **Important:** For `GPG_KEY_CONTENTS`, copy the ENTIRE content including:
+
 ```
 -----BEGIN PGP PRIVATE KEY BLOCK-----
 
@@ -280,6 +290,7 @@ Brief description of what your library does.
 ```
 
 **Find and replace in README.MD:**
+
 - `Compose Multiplatform Library Template` → `Your Library Name`
 - `cmp-lib-template` → `your-repo-name`
 - `aryapreetam` → `yourname`
@@ -289,6 +300,7 @@ Brief description of what your library does.
 ### 6.2 Update LICENSE
 
 Replace the name and year in `LICENSE` file:
+
 ```
 MIT License
 
@@ -300,6 +312,7 @@ Copyright (c) 2025 Your Name
 ### 6.3 Update CONTRIBUTING.md
 
 Replace repository-specific URLs:
+
 - `https://github.com/aryapreetam/cmp-lib-template` → Your repo URL
 
 ---
@@ -417,6 +430,7 @@ git push origin main
 ```
 
 This will trigger the `push-ci.yml` workflow which runs:
+
 - Lint checks
 - All platform tests (JVM, iOS, wasm, Android)
 - Android UI tests
@@ -426,6 +440,7 @@ This will trigger the `push-ci.yml` workflow which runs:
 Go to: **Your Repo → Actions tab**
 
 Verify all jobs pass:
+
 - ✅ lint
 - ✅ lib-tests (jvm, ios, wasm)
 - ✅ test-android-unit
@@ -434,6 +449,7 @@ Verify all jobs pass:
 ### 9.3 Fix Any Failures
 
 Common issues:
+
 - Package name mismatches
 - Missing imports
 - Test failures due to removed template code
@@ -445,6 +461,7 @@ Common issues:
 ### 10.1 Verify Secrets
 
 Double-check all 5 GitHub secrets are set correctly:
+
 - MAVEN_CENTRAL_USERNAME
 - MAVEN_CENTRAL_PASSWORD
 - SIGNING_KEY_ID
@@ -466,6 +483,7 @@ git push origin v0.1.0
 Go to: **Actions → Publish Multiplatform Release**
 
 The workflow will:
+
 1. ✅ Run CI (lint + tests)
 2. ✅ Build artifacts (APK, DMG x2, wasm, iOS)
 3. ✅ Create GitHub Release
@@ -475,14 +493,17 @@ The workflow will:
 ### 10.4 Verify Publication
 
 **GitHub Release:**
+
 - Go to: **Your Repo → Releases**
 - Verify artifacts are attached
 
 **Maven Central:**
+
 - Wait ~30 minutes for sync
 - Check: https://central.sonatype.com/artifact/io.github.yourname/yourlibname
 
 **GitHub Pages:**
+
 - Go to: **Settings → Pages**
 - Enable Pages if not already enabled
 - Visit: `https://yourname.github.io/your-repo/`
@@ -503,6 +524,7 @@ Add a Maven Central version badge to your README:
 ## 🎉 You're Done!
 
 Your library is now:
+
 - ✅ Published on Maven Central
 - ✅ Documented with API docs
 - ✅ Demo-able via wasm

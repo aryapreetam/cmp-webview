@@ -18,3 +18,8 @@ Pods/
 /doc-to-ignore/
 # Template configuration (each user should run setup-template.sh)
 .template-config.json
+/docs-to-ignore/
+/.github/prompts/
+/.vscode/
+/.specify/
+/specs/

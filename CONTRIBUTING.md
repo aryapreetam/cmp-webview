@@ -110,6 +110,7 @@ Test your library locally before publishing to Maven Central:
 ```
 
 Then in another project, add:
+
 ```kotlin
 repositories {
     mavenLocal()
@@ -128,8 +129,8 @@ dependencies {
 ### Setup (One-time)
 
 1. **Create Sonatype Account**
-   - Sign up at https://central.sonatype.com/
-   - Create a namespace (e.g., `io.github.yourusername`)
+    - Sign up at https://central.sonatype.com/
+    - Create a namespace (e.g., `io.github.yourusername`)
 
 2. **Generate GPG Key**
    ```bash
@@ -151,11 +152,11 @@ dependencies {
    Go to: `Settings → Secrets and variables → Actions → New repository secret`
 
    Add these secrets:
-   - `MAVEN_CENTRAL_USERNAME`: Your Sonatype username
-   - `MAVEN_CENTRAL_PASSWORD`: Your Sonatype password (or token)
-   - `SIGNING_KEY_ID`: Last 8 characters of your GPG key ID
-   - `SIGNING_PASSWORD`: Passphrase for your GPG key
-   - `GPG_KEY_CONTENTS`: Contents of `private-key.asc` (ASCII-armored key)
+    - `MAVEN_CENTRAL_USERNAME`: Your Sonatype username
+    - `MAVEN_CENTRAL_PASSWORD`: Your Sonatype password (or token)
+    - `SIGNING_KEY_ID`: Last 8 characters of your GPG key ID
+    - `SIGNING_PASSWORD`: Passphrase for your GPG key
+    - `GPG_KEY_CONTENTS`: Contents of `private-key.asc` (ASCII-armored key)
 
 4. **Configure Local Publishing (optional)**
 
@@ -190,14 +191,14 @@ dependencies {
    ```
 
 4. **Monitor GitHub Actions**
-   - Go to `Actions` tab
-   - Watch the `Publish Multiplatform Release` workflow
-   - It will:
-     - Run all tests
-     - Build artifacts (APK, DMG, wasm, iOS)
-     - Create GitHub Release
-     - Publish to Maven Central
-     - Deploy docs to GitHub Pages
+    - Go to `Actions` tab
+    - Watch the `Publish Multiplatform Release` workflow
+    - It will:
+        - Run all tests
+        - Build artifacts (APK, DMG, wasm, iOS)
+        - Create GitHub Release
+        - Publish to Maven Central
+        - Deploy docs to GitHub Pages
 
 ---
 
@@ -254,8 +255,8 @@ dependencies {
    ```
 
 3. **Update CI workflows**
-   - Add tvOS testing in `.github/workflows/ci.yml`
-   - Add tvOS artifact build in `.github/workflows/release.yml`
+    - Add tvOS testing in `.github/workflows/ci.yml`
+    - Add tvOS artifact build in `.github/workflows/release.yml`
 
 4. **Test locally**
    ```bash
@@ -290,19 +291,23 @@ Edit `README.MD` - it's automatically converted to the homepage via Docsify.
 ### Common Issues
 
 **Issue: "Task :lib:signKotlinMultiplatformPublication not found"**
+
 - Ensure GPG key is properly configured
 - Check `signing.keyId` is set (local) or `signingInMemoryKey` (CI)
 
 **Issue: "iOS simulator tests fail"**
+
 - Make sure Xcode is installed
 - Run: `xcodebuild -downloadAllPlatforms`
 - Check available simulators: `xcrun simctl list devices`
 
 **Issue: "wasm tests fail with CHROME_BIN not found"**
+
 - Install Chrome: `brew install --cask google-chrome`
 - Or set: `export CHROME_BIN=/path/to/chrome`
 
 **Issue: "Maven Central publishing fails"**
+
 - Verify namespace ownership in Sonatype
 - Check all secrets are correctly set in GitHub
 - Ensure version is unique (not already published)

@@ -1,110 +1,123 @@
 package io.github.aryapreetam.cmpwebview
 
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.viewinterop.UIKitInteropProperties
 import androidx.compose.ui.viewinterop.UIKitView
+import io.github.aryapreetam.cmpwebview.internal.constants.BRIDGE_SCRIPT
+import io.github.aryapreetam.cmpwebview.internal.models.WebViewCallbacks
+import io.github.aryapreetam.cmpwebview.internal.models.WebViewContent
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.ObjCSignatureOverride
 import kotlinx.cinterop.readValue
 import platform.CoreGraphics.CGRectZero
-import platform.Foundation.NSString
-import platform.UIKit.NSLayoutConstraint
-import platform.UIKit.UIView
-import platform.WebKit.WKScriptMessage
-import platform.WebKit.WKScriptMessageHandlerProtocol
-import platform.WebKit.WKUserContentController
-import platform.WebKit.WKUserScript
-import platform.WebKit.WKUserScriptInjectionTime
-import platform.WebKit.WKWebView
-import platform.WebKit.WKWebViewConfiguration
+import platform.Foundation.NSURLRequest
+import platform.Foundation.NSURL
+import platform.WebKit.*
 import platform.darwin.NSObject
 
 @OptIn(ExperimentalForeignApi::class)
-@androidx.compose.runtime.Composable
-actual fun WebViewImpl(url: String, onScriptResult: ((String) -> Unit)?) {
-  val config = WKWebViewConfiguration().apply {
-    allowsInlineMediaPlayback = true
-    allowsAirPlayForMediaPlayback = true
-    allowsPictureInPictureMediaPlayback = true
-  }
-
-  val messageHandler = remember { MessageHandler(onScriptResult) }
+@Composable
+internal actual fun WebViewImpl(
+  content: WebViewContent,
+  callbacks: WebViewCallbacks,
+  modifier: Modifier
+) {
+  val messageHandler = remember { IOSMessageHandler(callbacks.onScriptResult) }
+  val navigationDelegate = remember { IOSNavigationDelegate(callbacks) }
 
   val webView = remember {
-    WKWebView(CGRectZero.readValue(), config).apply {
-      // Add script message handler
-      configuration.userContentController.addScriptMessageHandler(
-        messageHandler,
-        "iosMessageHandler"
-      )
+    val config = WKWebViewConfiguration()
+
+    // Inject bridge script at document start
+    val userScript = WKUserScript(
+      source = BRIDGE_SCRIPT,
+      injectionTime = WKUserScriptInjectionTime.WKUserScriptInjectionTimeAtDocumentStart,
+      forMainFrameOnly = false
+    )
+    config.userContentController.addUserScript(userScript)
+    config.userContentController.addScriptMessageHandler(messageHandler, "iosBridge")
+
+    WKWebView(frame = CGRectZero.readValue(), configuration = config).apply {
+      setNavigationDelegate(navigationDelegate)
     }
   }
 
-  // Enable java script content
-  webView.configuration.defaultWebpagePreferences.allowsContentJavaScript = true
+  DisposableEffect(content) {
+    when (content) {
+      is WebViewContent.Url -> {
+        val nsUrl = NSURL.URLWithString(content.url)
+        val request = NSURLRequest.requestWithURL(nsUrl!!)
 
-  // Inject JavaScript to intercept location updates
-  val script = WKUserScript(
-    source = """
-      window.postMessage = function(data) {
-        window.webkit.messageHandlers.iosMessageHandler.postMessage(data);
-      };
-    """.trimIndent(),
-    injectionTime = WKUserScriptInjectionTime.WKUserScriptInjectionTimeAtDocumentStart,
-    forMainFrameOnly = true
-  )
-  webView.configuration.userContentController.addUserScript(script)
+        // Note: WKWebView doesn't support custom headers in loadRequest
+        // For headers support, would need to use URLSession
+        webView.loadRequest(request)
+      }
 
-  DisposableEffect(Unit) {
+      is WebViewContent.Html -> {
+        val baseUrl = content.baseUrl?.let { NSURL.URLWithString(it) }
+        webView.loadHTMLString(
+          string = content.htmlContent,
+          baseURL = baseUrl
+        )
+      }
+    }
+
     onDispose {
-      // Remove the message handler when the view is disposed
-      webView.configuration.userContentController.removeScriptMessageHandlerForName(
-        "iosMessageHandler"
-      )
+      webView.configuration.userContentController.removeScriptMessageHandlerForName("iosBridge")
+      webView.stopLoading()
     }
   }
 
   UIKitView(
-    factory = {
-      val container = UIView()
-
-      webView.translatesAutoresizingMaskIntoConstraints = false
-      container.addSubview(webView)
-
-      NSLayoutConstraint.activateConstraints(
-        listOf(
-          webView.topAnchor.constraintEqualToAnchor(container.topAnchor),
-          webView.bottomAnchor.constraintEqualToAnchor(container.bottomAnchor),
-          webView.leadingAnchor.constraintEqualToAnchor(container.leadingAnchor),
-          webView.trailingAnchor.constraintEqualToAnchor(container.trailingAnchor)
-        )
-      )
-
-      webView.loadHTMLString(url, baseURL = null)
-
-      container
-    },
-    modifier = Modifier.fillMaxSize(),
-    properties = UIKitInteropProperties(
-      isInteractive = true,
-      isNativeAccessibilityEnabled = true
-    )
+    factory = { webView },
+    modifier = modifier
   )
 }
 
-private class MessageHandler(
+@OptIn(ExperimentalForeignApi::class)
+private class IOSMessageHandler(
   private val onScriptResult: ((String) -> Unit)?
 ) : NSObject(), WKScriptMessageHandlerProtocol {
   override fun userContentController(
     userContentController: WKUserContentController,
     didReceiveScriptMessage: WKScriptMessage
   ) {
-    val message = didReceiveScriptMessage.body as? NSString
-    if (message != null) {
-      println("Received message in iOS bridge: $message")
-      onScriptResult?.invoke(message.toString())
-    }
+    val message = didReceiveScriptMessage.body as? String
+    message?.let { onScriptResult?.invoke(it) }
+  }
+}
+
+@OptIn(ExperimentalForeignApi::class)
+private class IOSNavigationDelegate(
+  private val callbacks: WebViewCallbacks
+) : NSObject(), WKNavigationDelegateProtocol {
+  @ObjCSignatureOverride
+  override fun webView(webView: WKWebView, didStartProvisionalNavigation: WKNavigation?) {
+    callbacks.onLoadStarted?.invoke()
+  }
+
+  @ObjCSignatureOverride
+  override fun webView(webView: WKWebView, didFinishNavigation: WKNavigation?) {
+    callbacks.onLoadFinished?.invoke()
+  }
+
+  @ObjCSignatureOverride
+  override fun webView(
+    webView: WKWebView,
+    didFailProvisionalNavigation: WKNavigation?,
+    withError: platform.Foundation.NSError
+  ) {
+    callbacks.onLoadError?.invoke(withError.localizedDescription)
+  }
+
+  @ObjCSignatureOverride
+  override fun webView(
+    webView: WKWebView,
+    didFailNavigation: WKNavigation?,
+    withError: platform.Foundation.NSError
+  ) {
+    callbacks.onLoadError?.invoke(withError.localizedDescription)
   }
 }
