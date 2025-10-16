@@ -102,6 +102,9 @@ internal actual fun WebViewImpl(
       Log.d(TAG, "WebView created, setting up bridge")
       webViewInstance = webView
 
+      // Fix black flicker by setting transparent background
+      webView.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+
       webView.settings.apply {
         @Suppress("SetJavaScriptEnabled") // Required for bridge functionality
         javaScriptEnabled = true

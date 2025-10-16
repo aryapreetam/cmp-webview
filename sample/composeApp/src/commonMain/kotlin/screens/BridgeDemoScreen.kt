@@ -1,15 +1,19 @@
 package screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import io.github.aryapreetam.cmpwebview.WebView
 import androidx.compose.material3.Icon
@@ -21,22 +25,15 @@ fun BridgeDemoScreen(onBack: () -> Unit = {}) {
   var selectedDemo by remember { mutableStateOf<DemoType?>(null) }
   var lastMessage by remember { mutableStateOf("No messages yet") }
   var messageCount by remember { mutableStateOf(0) }
-  var webViewKey by remember { mutableStateOf(0) } // Add unique key for WebView
-
-  // Add stability delay for desktop WebView to prevent rapid disposal
-  var showWebView by remember { mutableStateOf(false) }
-  // New: Compose-level bridge-ready flag
+  var webViewKey by remember { mutableStateOf(0) }
   var bridgeReady by remember { mutableStateOf(false) }
 
+  // Reset state when demo changes
   LaunchedEffect(selectedDemo) {
     if (selectedDemo != null) {
-      showWebView = false
-      bridgeReady = false // reset when launching a demo
-      kotlinx.coroutines.delay(100) // Small delay to stabilize
-      showWebView = true
-    } else {
-      showWebView = false
       bridgeReady = false
+      lastMessage = "No messages yet"
+      messageCount = 0
     }
   }
 
@@ -70,7 +67,7 @@ fun BridgeDemoScreen(onBack: () -> Unit = {}) {
           description = "Test simple messages, JSON, counter, and stress test with 100 rapid messages",
           onClick = {
             selectedDemo = DemoType.BRIDGE_TEST
-            webViewKey++ // Increment key to force WebView recreation
+            webViewKey++
           }
         )
 
@@ -79,7 +76,7 @@ fun BridgeDemoScreen(onBack: () -> Unit = {}) {
           description = "Submit a form and receive structured JSON data",
           onClick = {
             selectedDemo = DemoType.FORM_DEMO
-            webViewKey++ // Increment key to force WebView recreation
+            webViewKey++
           }
         )
 
@@ -88,7 +85,7 @@ fun BridgeDemoScreen(onBack: () -> Unit = {}) {
           description = "Real-time interactions: counter, color picker, slider",
           onClick = {
             selectedDemo = DemoType.INTERACTIVE
-            webViewKey++ // Increment key to force WebView recreation
+            webViewKey++
           }
         )
       }
@@ -138,29 +135,25 @@ fun BridgeDemoScreen(onBack: () -> Unit = {}) {
 
         // WebView with unique key to force recreation
         key(webViewKey) {
-          if (showWebView) {
-            WebView(
-              htmlContent = getHtmlContent(selectedDemo!!),
-              modifier = Modifier.fillMaxSize(),
-              onScriptResult = { message ->
-                // Mark bridge as ready on first successful message
-                if (!bridgeReady) bridgeReady = true
-                lastMessage = message.take(100) // Truncate for display
-                messageCount++
-              },
-              onLoadStarted = {
-                // keep bridgeReady as-is; it will flip on finish
-              },
-              onLoadFinished = {
-                // Bridge script injected on onLoadEnd in desktop impl
-                bridgeReady = true
-              },
-              onLoadError = { error ->
-                lastMessage = "Error: $error"
-                bridgeReady = false
-              }
-            )
-          }
+          WebView(
+            htmlContent = getHtmlContent(selectedDemo!!),
+            modifier = Modifier.fillMaxSize(),
+            onScriptResult = { message ->
+              if (!bridgeReady) bridgeReady = true
+              lastMessage = message.take(100)
+              messageCount++
+            },
+            onLoadStarted = {
+              // Page started loading
+            },
+            onLoadFinished = {
+              bridgeReady = true
+            },
+            onLoadError = { error ->
+              lastMessage = "Error: $error"
+              bridgeReady = false
+            }
+          )
         }
       }
     }
