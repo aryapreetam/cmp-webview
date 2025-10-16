@@ -1,25 +1,27 @@
 package screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import io.github.aryapreetam.cmpwebview.WebView
 import androidx.compose.material3.Icon
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BridgeDemoScreen(onBack: () -> Unit = {}) {
   var selectedDemo by remember { mutableStateOf<DemoType?>(null) }
@@ -37,123 +39,140 @@ fun BridgeDemoScreen(onBack: () -> Unit = {}) {
     }
   }
 
-  Column(modifier = Modifier.fillMaxSize()) {
-    if (selectedDemo == null) {
-      // Demo selection screen
-      Column(
-        modifier = Modifier
-          .fillMaxSize()
-          .padding(16.dp)
-          .verticalScroll(rememberScrollState())
-      ) {
-        // Back button to go to home screen
-        Button(
-          onClick = onBack,
-          modifier = Modifier.padding(bottom = 16.dp)
-        ) {
-          Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
-          Spacer(Modifier.width(8.dp))
-          Text("Back to Home")
-        }
-
-        Text(
-          text = "Bridge Communication Demos",
-          style = MaterialTheme.typography.headlineMedium,
-          modifier = Modifier.padding(bottom = 16.dp)
-        )
-
-        DemoCard(
-          title = "Basic Bridge Test",
-          description = "Test simple messages, JSON, counter, and stress test with 100 rapid messages",
-          onClick = {
-            selectedDemo = DemoType.BRIDGE_TEST
-            webViewKey++
-          }
-        )
-
-        DemoCard(
-          title = "Form Submission Demo",
-          description = "Submit a form and receive structured JSON data",
-          onClick = {
-            selectedDemo = DemoType.FORM_DEMO
-            webViewKey++
-          }
-        )
-
-        DemoCard(
-          title = "Interactive Demo",
-          description = "Real-time interactions: counter, color picker, slider",
-          onClick = {
-            selectedDemo = DemoType.INTERACTIVE
-            webViewKey++
-          }
-        )
-      }
-    } else {
-      // WebView with selected demo
-      Column(modifier = Modifier.fillMaxSize()) {
-        // Header with back button and message display
-        Card(
-          modifier = Modifier.fillMaxWidth(),
-          elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-        ) {
-          Column(modifier = Modifier.padding(16.dp)) {
-            Button(
-              onClick = {
+  Scaffold(
+    topBar = {
+      TopAppBar(
+        title = {
+          Text(
+            when (selectedDemo) {
+              DemoType.BRIDGE_TEST -> "Basic Bridge Test"
+              DemoType.FORM_DEMO -> "Form Submission Demo"
+              DemoType.INTERACTIVE -> "Interactive Demo"
+              null -> "Bridge Communication Demos"
+            }
+          )
+        },
+        navigationIcon = {
+          IconButton(
+            onClick = {
+              if (selectedDemo != null) {
+                // Go back to demo selection
                 selectedDemo = null
                 lastMessage = "No messages yet"
                 messageCount = 0
                 bridgeReady = false
+              } else {
+                // Go back to home screen
+                onBack()
               }
-            ) {
-              Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
-              Spacer(Modifier.width(8.dp))
-              Text("Back to Menu")
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Bridge status row
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-              Text(
-                text = if (bridgeReady) "Bridge: Ready" else "Bridge: Waiting…",
-                style = MaterialTheme.typography.titleMedium
-              )
-              Text(
-                text = "Messages received: $messageCount",
-                style = MaterialTheme.typography.titleMedium
-              )
-            }
-
-            Text(
-              text = "Last: $lastMessage",
-              style = MaterialTheme.typography.bodyMedium,
-              modifier = Modifier.padding(top = 4.dp)
-            )
+          ) {
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
           }
         }
+      )
+    }
+  ) { paddingValues ->
+    Column(
+      modifier = Modifier
+        .fillMaxSize()
+        .padding(paddingValues)
+    ) {
+      if (selectedDemo == null) {
+        // Demo selection screen
+        Column(
+          modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState())
+        ) {
+          Text(
+            text = "Select a demo to test bridge communication:",
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.padding(bottom = 16.dp)
+          )
 
-        // WebView with unique key to force recreation
-        key(webViewKey) {
-          WebView(
-            htmlContent = getHtmlContent(selectedDemo!!),
-            modifier = Modifier.fillMaxSize(),
-            onScriptResult = { message ->
-              if (!bridgeReady) bridgeReady = true
-              lastMessage = message.take(100)
-              messageCount++
-            },
-            onLoadStarted = {
-              // Page started loading
-            },
-            onLoadFinished = {
-              bridgeReady = true
-            },
-            onLoadError = { error ->
-              lastMessage = "Error: $error"
-              bridgeReady = false
+          DemoCard(
+            title = "Basic Bridge Test",
+            description = "Test simple messages, JSON, counter, and stress test with 100 rapid messages",
+            onClick = {
+              selectedDemo = DemoType.BRIDGE_TEST
+              webViewKey++
             }
           )
+
+          DemoCard(
+            title = "Form Submission Demo",
+            description = "Submit a form and receive structured JSON data",
+            onClick = {
+              selectedDemo = DemoType.FORM_DEMO
+              webViewKey++
+            }
+          )
+
+          DemoCard(
+            title = "Interactive Demo",
+            description = "Real-time interactions: counter, color picker, slider",
+            onClick = {
+              selectedDemo = DemoType.INTERACTIVE
+              webViewKey++
+            }
+          )
+        }
+      } else {
+        // WebView with selected demo
+        Column(modifier = Modifier.fillMaxSize()) {
+          // Header with bridge status and message display
+          Card(
+            modifier = Modifier.fillMaxWidth(),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+          ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+              // Bridge status row
+              Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+              ) {
+                Text(
+                  text = if (bridgeReady) "Bridge: Ready" else "Bridge: Waiting…",
+                  style = MaterialTheme.typography.titleMedium
+                )
+                Text(
+                  text = "Messages: $messageCount",
+                  style = MaterialTheme.typography.titleMedium
+                )
+              }
+
+              Text(
+                text = "Last: $lastMessage",
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(top = 4.dp)
+              )
+            }
+          }
+
+          // WebView with unique key to force recreation
+          key(webViewKey) {
+            WebView(
+              htmlContent = getHtmlContent(selectedDemo!!),
+              modifier = Modifier.fillMaxSize(),
+              onScriptResult = { message ->
+                if (!bridgeReady) bridgeReady = true
+                lastMessage = message.take(100)
+                messageCount++
+              },
+              onLoadStarted = {
+                // Page started loading
+              },
+              onLoadFinished = {
+                bridgeReady = true
+              },
+              onLoadError = { error ->
+                lastMessage = "Error: $error"
+                bridgeReady = false
+              }
+            )
+          }
         }
       }
     }
