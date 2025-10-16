@@ -10,6 +10,7 @@ dokka = "2.1.0-Beta"
 compose-webview = "0.33.6"
 kotlinx-coroutines = "1.10.2"
 os-detector = "1.7.3"
+kcef = "2025.03.23"
 
 [libraries]
 android-documentation-plugin = { module = "org.jetbrains.dokka:android-documentation-plugin", version.ref = "dokka" }
@@ -17,6 +18,7 @@ kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotl
 androidx-activityCompose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activityCompose" }
 compose-webview = { module = "io.github.kevinnzou:compose-webview", version.ref = "compose-webview" }
 kotlinx-coroutines-swing = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines" }
+kcef = { module = "dev.datlag:kcef", version.ref = "kcef" }
 
 [plugins]
 

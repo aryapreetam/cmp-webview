@@ -75,10 +75,23 @@ compose.desktop {
   application {
     mainClass = "MainKt"
 
+    // Add JVM arguments required for KCEF
+    jvmArgs("--add-opens", "java.desktop/sun.awt=ALL-UNNAMED")
+    jvmArgs("--add-opens", "java.desktop/java.awt.peer=ALL-UNNAMED")
+
+    if (System.getProperty("os.name").contains("Mac")) {
+      jvmArgs("--add-opens", "java.desktop/sun.lwawt=ALL-UNNAMED")
+      jvmArgs("--add-opens", "java.desktop/sun.lwawt.macosx=ALL-UNNAMED")
+    }
+
     nativeDistributions {
       targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
       packageName = "sample"
       packageVersion = "1.0.0"
+    }
+
+    buildTypes.release.proguard {
+      configurationFiles.from("compose-desktop.pro")
     }
   }
 }

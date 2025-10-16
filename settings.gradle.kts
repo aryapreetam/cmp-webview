@@ -26,6 +26,7 @@ dependencyResolutionManagement {
       }
     }
     mavenCentral()
+    maven("https://jogamp.org/deployment/maven")
   }
 }
 
@@ -35,4 +36,3 @@ plugins {
 
 include(":lib")
 include(":sample:composeApp")
-

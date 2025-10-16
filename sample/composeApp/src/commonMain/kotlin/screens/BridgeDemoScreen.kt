@@ -285,7 +285,7 @@ fun getFormDemoHtml(): String = """
                     country: document.getElementById('country').value
                 });
                 window.ComposeWebViewBridge.postMessage(data);
-                alert('Form submitted!');
+                console.log('Form submitted!');
                 event.target.reset();
             }
         }

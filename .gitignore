@@ -23,3 +23,7 @@ Pods/
 /.vscode/
 /.specify/
 /specs/
+
+# KCEF bundle directory (platform-specific, downloaded at runtime)
+kcef-bundle/
+**/kcef-bundle/

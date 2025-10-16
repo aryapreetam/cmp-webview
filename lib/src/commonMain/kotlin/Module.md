@@ -131,8 +131,17 @@ fun BridgeExample() {
 |----------|--------|----------------|
 | Android  | ✅ Supported | Native Android WebView |
 | iOS      | ✅ Supported | WKWebView |
-| Desktop (JVM) | ✅ Supported | JavaFX WebView |
+| Desktop (JVM) | ✅ Supported | KCEF (Chromium) |
 | Web (WASM) | ✅ Supported | HTML iframe |
+
+### Desktop Requirements
+
+The Desktop implementation uses KCEF (Kotlin Chromium Embedded Framework), which provides a modern Chromium-based browser engine.
+
+**Important Notes:**
+- On first run, KCEF will automatically download ~200MB of Chromium binaries (one-time only)
+- The download is cached locally and reused for subsequent runs
+- macOS users must add JVM flags to their application (see Installation section)
 
 ## Security
 
