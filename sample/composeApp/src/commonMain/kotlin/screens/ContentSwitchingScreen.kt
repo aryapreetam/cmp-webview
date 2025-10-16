@@ -5,6 +5,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import io.github.aryapreetam.cmpwebview.WebView
 
@@ -126,8 +127,7 @@ fun ContentSwitchingScreen(onBack: () -> Unit) {
 
               WebView(
                 url = currentUrl,
-                modifier = Modifier.fillMaxSize(),
-                testTag = "content-switch-url-webview",
+                modifier = Modifier.fillMaxSize().testTag("content-switch-url-webview"),
                 onLoadStarted = { isLoading = true },
                 onLoadFinished = { isLoading = false },
                 onLoadError = { isLoading = false }
@@ -173,8 +173,7 @@ fun ContentSwitchingScreen(onBack: () -> Unit) {
                                     </body>
                                 </html>
                             """.trimIndent(),
-              modifier = Modifier.fillMaxSize(),
-              testTag = "content-switch-html-webview",
+              modifier = Modifier.fillMaxSize().testTag("content-switch-html-webview"),
               onLoadStarted = { isLoading = true },
               onLoadFinished = { isLoading = false }
             )

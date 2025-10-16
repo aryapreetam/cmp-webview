@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import io.github.aryapreetam.cmpwebview.WebView
 
@@ -70,8 +71,7 @@ fun HtmlLoadingScreen(onBack: () -> Unit) {
       WebView(
         htmlContent = selectedDemo.html,
         baseUrl = selectedDemo.baseUrl,
-        modifier = Modifier.fillMaxSize(),
-        testTag = "html-loading-webview"
+        modifier = Modifier.fillMaxSize().testTag("html-loading-webview")
       )
     }
   }

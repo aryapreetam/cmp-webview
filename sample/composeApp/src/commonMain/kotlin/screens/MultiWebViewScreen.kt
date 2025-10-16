@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import io.github.aryapreetam.cmpwebview.WebView
 
@@ -192,8 +193,7 @@ private fun WebViewCard(
       }
       WebView(
         url = url,
-        modifier = Modifier.fillMaxSize(),
-        testTag = testTag
+        modifier = Modifier.fillMaxSize().testTag(testTag)
       )
     }
   }

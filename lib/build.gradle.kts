@@ -77,6 +77,45 @@ dependencies {
   dokkaPlugin(libs.android.documentation.plugin)
 }
 
+// Configure Dokka V2 extension
+dokka {
+  moduleName.set("CMP WebView")
+
+  dokkaPublications.html {
+    suppressObviousFunctions.set(false)
+    suppressInheritedMembers.set(false)
+  }
+
+  dokkaSourceSets.configureEach {
+    // Include Module.md from the source directory
+    includes.from("src/commonMain/kotlin/Module.md")
+    includes.from("src/commonMain/kotlin/io/github/aryapreetam/cmpwebview/package.md")
+
+    // Add module documentation
+    displayName.set("CMP WebView")
+
+    // Add source links to GitHub
+    sourceLink {
+      localDirectory.set(file("src"))
+      remoteUrl("https://github.com/aryapreetam/cmp-webview/tree/main/lib/src")
+      remoteLineSuffix.set("#L")
+    }
+
+    // Suppress internal packages
+    perPackageOption {
+      matchingRegex.set(".*\\.internal.*")
+      suppress.set(true)
+    }
+
+    // Add package documentation
+    perPackageOption {
+      matchingRegex.set("io.github.aryapreetam.cmpwebview")
+      reportUndocumented.set(true)
+      skipDeprecated.set(false)
+    }
+  }
+}
+
 //Publishing your Kotlin Multiplatform library to Maven Central
 //https://www.jetbrains.com/help/kotlin-multiplatform-dev/multiplatform-publish-libraries.html
 mavenPublishing {

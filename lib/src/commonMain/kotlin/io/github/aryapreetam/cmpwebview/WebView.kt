@@ -6,7 +6,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -26,8 +25,12 @@ import io.github.aryapreetam.cmpwebview.internal.models.WebViewContent
  * - Use custom headers cautiously to avoid exposing sensitive data
  *
  * ## Testing
- * Use the `testTag` parameter to identify the WebView in UI tests:
+ * Use `Modifier.testTag()` to identify the WebView in UI tests:
  * ```kotlin
+ * WebView(
+ *     url = "https://example.com",
+ *     modifier = Modifier.testTag("my-webview")
+ * )
  * composeTestRule.onNodeWithTag("my-webview").assertExists()
  * ```
  *
@@ -39,7 +42,7 @@ import io.github.aryapreetam.cmpwebview.internal.models.WebViewContent
  * ```kotlin
  * WebView(
  *     url = "https://example.com",
- *     testTag = "example-webview",
+ *     modifier = Modifier.testTag("example-webview"),
  *     headers = mapOf("Authorization" to "Bearer token"),
  *     onLoadStarted = { println("Loading started") },
  *     onLoadFinished = { println("Loading finished") },
@@ -50,7 +53,6 @@ import io.github.aryapreetam.cmpwebview.internal.models.WebViewContent
  *
  * @param url The URL to load
  * @param modifier Compose modifier for layout and styling
- * @param testTag Test tag for UI testing (default: "webview")
  * @param headers Optional HTTP headers for the request
  * @param onScriptResult Callback for JavaScript bridge messages from ComposeWebViewBridge.postMessage()
  * @param onLoadStarted Callback when page load begins
@@ -61,7 +63,6 @@ import io.github.aryapreetam.cmpwebview.internal.models.WebViewContent
 fun WebView(
   url: String,
   modifier: Modifier = Modifier,
-  testTag: String = "webview",
   headers: Map<String, String>? = null,
   onScriptResult: ((String) -> Unit)? = null,
   onLoadStarted: (() -> Unit)? = null,
@@ -93,7 +94,6 @@ fun WebView(
   }
 
   val modifierWithSemantics = modifier
-    .testTag(testTag)
     .semantics {
       contentDescription = "Web content display"
       stateDescription = loadingState
@@ -114,8 +114,12 @@ fun WebView(
  * - JavaScript in HTML content can communicate via ComposeWebViewBridge
  *
  * ## Testing
- * Use the `testTag` parameter to identify the WebView in UI tests:
+ * Use `Modifier.testTag()` to identify the WebView in UI tests:
  * ```kotlin
+ * WebView(
+ *     htmlContent = "<html><body><h1>Hello</h1></body></html>",
+ *     modifier = Modifier.testTag("html-webview")
+ * )
  * composeTestRule.onNodeWithTag("html-webview").assertExists()
  * ```
  *
@@ -127,7 +131,7 @@ fun WebView(
  * ```kotlin
  * WebView(
  *     htmlContent = "<html><body><h1>Hello World</h1></body></html>",
- *     testTag = "html-webview",
+ *     modifier = Modifier.testTag("html-webview"),
  *     baseUrl = "https://example.com",
  *     onLoadStarted = { println("Loading started") },
  *     onLoadFinished = { println("Loading finished") },
@@ -137,7 +141,6 @@ fun WebView(
  *
  * @param htmlContent The HTML string to display
  * @param modifier Compose modifier for layout and styling
- * @param testTag Test tag for UI testing (default: "webview")
  * @param baseUrl Optional base URL for resolving relative links in the HTML content
  * @param onScriptResult Callback for JavaScript bridge messages from ComposeWebViewBridge.postMessage()
  * @param onLoadStarted Callback when content load begins
@@ -148,7 +151,6 @@ fun WebView(
 fun WebView(
   htmlContent: String,
   modifier: Modifier = Modifier,
-  testTag: String = "webview",
   baseUrl: String? = null,
   onScriptResult: ((String) -> Unit)? = null,
   onLoadStarted: (() -> Unit)? = null,
@@ -180,7 +182,6 @@ fun WebView(
   }
 
   val modifierWithSemantics = modifier
-    .testTag(testTag)
     .semantics {
       contentDescription = "Web content display"
       stateDescription = loadingState

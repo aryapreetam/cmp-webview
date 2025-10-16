@@ -5,6 +5,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import io.github.aryapreetam.cmpwebview.WebView
 
@@ -86,8 +87,7 @@ fun CustomHeadersScreen(onBack: () -> Unit) {
       WebView(
         url = selectedDemo.url,
         headers = selectedDemo.headers,
-        modifier = Modifier.fillMaxSize(),
-        testTag = "custom-headers-webview",
+        modifier = Modifier.fillMaxSize().testTag("custom-headers-webview"),
         onLoadStarted = { isLoading = true },
         onLoadFinished = { isLoading = false },
         onLoadError = { isLoading = false }

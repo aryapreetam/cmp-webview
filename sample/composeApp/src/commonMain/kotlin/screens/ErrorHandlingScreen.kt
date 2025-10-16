@@ -5,6 +5,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import io.github.aryapreetam.cmpwebview.WebView
 
@@ -113,8 +114,7 @@ fun ErrorHandlingScreen(onBack: () -> Unit) {
           Box(modifier = Modifier.fillMaxSize()) {
             WebView(
               url = selectedScenario.url,
-              modifier = Modifier.fillMaxSize(),
-              testTag = "error-handling-webview",
+              modifier = Modifier.fillMaxSize().testTag("error-handling-webview"),
               onLoadStarted = {
                 isLoading = true
               },
