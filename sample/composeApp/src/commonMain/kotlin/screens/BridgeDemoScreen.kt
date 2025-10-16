@@ -22,14 +22,18 @@ fun BridgeDemoScreen(onBack: () -> Unit = {}) {
 
   // Add stability delay for desktop WebView to prevent rapid disposal
   var showWebView by remember { mutableStateOf(false) }
+  // New: Compose-level bridge-ready flag
+  var bridgeReady by remember { mutableStateOf(false) }
 
   LaunchedEffect(selectedDemo) {
     if (selectedDemo != null) {
       showWebView = false
+      bridgeReady = false // reset when launching a demo
       kotlinx.coroutines.delay(100) // Small delay to stabilize
       showWebView = true
     } else {
       showWebView = false
+      bridgeReady = false
     }
   }
 
@@ -42,6 +46,14 @@ fun BridgeDemoScreen(onBack: () -> Unit = {}) {
           .padding(16.dp)
           .verticalScroll(rememberScrollState())
       ) {
+        // Add back button to go to home screen
+        Button(
+          onClick = onBack,
+          modifier = Modifier.padding(bottom = 16.dp)
+        ) {
+          Text("← Back to Home")
+        }
+
         Text(
           text = "Bridge Communication Demos",
           style = MaterialTheme.typography.headlineMedium,
@@ -89,6 +101,7 @@ fun BridgeDemoScreen(onBack: () -> Unit = {}) {
                 selectedDemo = null
                 lastMessage = "No messages yet"
                 messageCount = 0
+                bridgeReady = false
               }
             ) {
               Text("← Back to Menu")
@@ -96,10 +109,17 @@ fun BridgeDemoScreen(onBack: () -> Unit = {}) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Text(
-              text = "Messages received: $messageCount",
-              style = MaterialTheme.typography.titleMedium
-            )
+            // New: Bridge status row
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+              Text(
+                text = if (bridgeReady) "Bridge: Ready" else "Bridge: Waiting…",
+                style = MaterialTheme.typography.titleMedium
+              )
+              Text(
+                text = "Messages received: $messageCount",
+                style = MaterialTheme.typography.titleMedium
+              )
+            }
 
             Text(
               text = "Last: $lastMessage",
@@ -116,19 +136,21 @@ fun BridgeDemoScreen(onBack: () -> Unit = {}) {
               htmlContent = getHtmlContent(selectedDemo!!),
               modifier = Modifier.fillMaxSize(),
               onScriptResult = { message ->
+                // Mark bridge as ready on first successful message
+                if (!bridgeReady) bridgeReady = true
                 lastMessage = message.take(100) // Truncate for display
                 messageCount++
-                println("Bridge message received: $message")
               },
               onLoadStarted = {
-                println("WebView: Load started")
+                // keep bridgeReady as-is; it will flip on finish
               },
               onLoadFinished = {
-                println("WebView: Load finished")
+                // Bridge script injected on onLoadEnd in desktop impl
+                bridgeReady = true
               },
               onLoadError = { error ->
-                println("WebView error: $error")
                 lastMessage = "Error: $error"
+                bridgeReady = false
               }
             )
           }

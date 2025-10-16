@@ -131,57 +131,57 @@ internal actual fun WebViewImpl(
         BasicText("Creating browser...")
       }
       else -> {
+        // Create browser resources that cleanup properly when content changes
+        val browserResources = remember(content) {
+          BrowserResources()
+        }
+
+        DisposableEffect(content) {
+          onDispose {
+            browserResources.cleanup(client)
+          }
+        }
+
         // Key ensures SwingPanel is recreated when content changes
         key(content) {
           SwingPanel(
             factory = {
               val panel = JPanel(BorderLayout())
               val kcefClient = client!!
-              val browser = kcefClient.createBrowser(
-                when (content) {
-                  is WebViewContent.Url -> content.url
-                  is WebViewContent.Html -> {
-                    "data:text/html;base64,${Base64.getEncoder().encodeToString(content.htmlContent.toByteArray())}"
-                  }
-                },
-                CefRendering.DEFAULT,
-                false
-              )
 
-              // Add load handler
-              kcefClient.addLoadHandler(object : CefLoadHandlerAdapter() {
+              // Create load handler FIRST, before browser creation
+              val handler = object : CefLoadHandlerAdapter() {
                 override fun onLoadStart(
                   browser: CefBrowser?,
                   frame: CefFrame?,
                   transitionType: CefRequest.TransitionType?
                 ) {
-                  if (frame?.isMain == true) {
-                    callbacks.onLoadStarted?.invoke()
-                  }
+                  val f = frame ?: return
+                  if (!f.isMain) return
+                  callbacks.onLoadStarted?.invoke()
                 }
 
                 override fun onLoadEnd(browser: CefBrowser?, frame: CefFrame?, httpStatusCode: Int) {
-                  if (frame?.isMain == true) {
-                    // Inject bridge script
-                    frame.executeJavaScript(
-                      """
-                      window.javaBridge = {
-                        postMessage: function(message) {
+                  val f = frame ?: return
+                  if (!f.isMain) return
+                  // Inject bridge script (minimal, no logs)
+                  val bridgeSetupScript = """
+                    window.javaBridge = {
+                      postMessage: function(message) {
+                        if (typeof window.cefQuery === 'function') {
                           window.cefQuery({
                             request: 'bridge:' + message,
-                            persistent: false,
-                            onSuccess: function(response) {},
-                            onFailure: function(error_code, error_message) {}
+                            persistent: false
                           });
                         }
-                      };
-                      $BRIDGE_SCRIPT
-                      """.trimIndent(),
-                      frame.url,
-                      0
-                    )
-                    callbacks.onLoadFinished?.invoke()
-                  }
+                      }
+                    };
+                    $BRIDGE_SCRIPT
+                  """.trimIndent()
+
+                  val scriptUrl = f.url ?: "about:blank"
+                  f.executeJavaScript(bridgeSetupScript, scriptUrl, 0)
+                  callbacks.onLoadFinished?.invoke()
                 }
 
                 override fun onLoadError(
@@ -191,14 +191,22 @@ internal actual fun WebViewImpl(
                   errorText: String?,
                   failedUrl: String?
                 ) {
-                  if (frame?.isMain == true) {
-                    callbacks.onLoadError?.invoke("$errorCode: $errorText ($failedUrl)")
-                  }
+                  val f = frame ?: return
+                  if (!f.isMain) return
+                  callbacks.onLoadError?.invoke("$errorCode: $errorText ($failedUrl)")
                 }
-              })
+              }
 
-              // Add message router for bridge communication
-              val msgRouter = CefMessageRouter.create()
+              // Add load handler BEFORE creating browser
+              kcefClient.addLoadHandler(handler)
+              browserResources.loadHandler = handler
+
+              // Create and add message router BEFORE creating the browser
+              val msgRouterConfig = CefMessageRouter.CefMessageRouterConfig(
+                "cefQuery",
+                "cefQueryCancel"
+              )
+              val msgRouter = CefMessageRouter.create(msgRouterConfig)
               msgRouter.addHandler(object : CefMessageRouterHandlerAdapter() {
                 override fun onQuery(
                   browser: CefBrowser?,
@@ -209,7 +217,7 @@ internal actual fun WebViewImpl(
                   callback: CefQueryCallback?
                 ): Boolean {
                   if (request?.startsWith("bridge:") == true) {
-                    val message = request.substring(7) // Remove "bridge:" prefix
+                    val message = request.substring(7)
                     callbacks.onScriptResult?.invoke(message)
                     callback?.success("")
                     return true
@@ -218,6 +226,17 @@ internal actual fun WebViewImpl(
                 }
               }, true)
               kcefClient.addMessageRouter(msgRouter)
+              browserResources.messageRouter = msgRouter
+
+              val url = when (content) {
+                is WebViewContent.Url -> content.url
+                is WebViewContent.Html -> {
+                  "data:text/html;base64,${Base64.getEncoder().encodeToString(content.htmlContent.toByteArray())}"
+                }
+              }
+
+              val browser = kcefClient.createBrowser(url, CefRendering.DEFAULT, false)
+              browserResources.browser = browser
 
               panel.add(browser.uiComponent, BorderLayout.CENTER)
               panel
@@ -229,10 +248,37 @@ internal actual fun WebViewImpl(
       }
     }
   }
+}
 
-  DisposableEffect(Unit) {
-    onDispose {
-      // Don't dispose the global client
+// Helper class to manage browser resources that need cleanup
+private class BrowserResources {
+  var browser: CefBrowser? = null
+  var messageRouter: CefMessageRouter? = null
+  var loadHandler: CefLoadHandlerAdapter? = null
+
+  fun cleanup(client: KCEFClient?) {
+    // Remove and dispose message router
+    messageRouter?.let { router ->
+      try {
+        client?.removeMessageRouter(router)
+        router.dispose()
+      } catch (_: Exception) {
+        // ignore
+      }
     }
+    messageRouter = null
+
+    // Note: KCEF doesn't support removing individual load handlers
+    loadHandler = null
+
+    // Close the browser instance
+    browser?.let { b ->
+      try {
+        b.close(true)
+      } catch (_: Exception) {
+        // ignore
+      }
+    }
+    browser = null
   }
 }
