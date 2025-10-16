@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bridge Test</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        button { padding: 12px 24px; margin: 8px; font-size: 16px; }
+        .log { background: #f5f5f5; padding: 10px; margin-top: 10px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>Bridge Debug Test</h1>
+    <div id="status" class="log">Checking bridge...</div>
+
+    <button onclick="testAndroidBridge()">Test AndroidBridge Directly</button>
+    <button onclick="testComposeBridge()">Test ComposeWebViewBridge</button>
+    <button onclick="checkWindow()">Check window objects</button>
+
+    <div id="log" class="log"></div>
+
+    <script>
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            logDiv.innerHTML = message + '<br>' + logDiv.innerHTML;
+            console.log(message);
+        }
+
+        function checkWindow() {
+            log('Checking window objects...');
+            log('window.AndroidBridge exists: ' + (typeof window.AndroidBridge !== 'undefined'));
+            log('window.AndroidBridge.postMessage exists: ' + (window.AndroidBridge && typeof window.AndroidBridge.postMessage === 'function'));
+            log('window.ComposeWebViewBridge exists: ' + (typeof window.ComposeWebViewBridge !== 'undefined'));
+            log('window.ComposeWebViewBridge.postMessage exists: ' + (window.ComposeWebViewBridge && typeof window.ComposeWebViewBridge.postMessage === 'function'));
+        }
+
+        function testAndroidBridge() {
+            log('Testing AndroidBridge directly...');
+            if (window.AndroidBridge && typeof window.AndroidBridge.postMessage === 'function') {
+                try {
+                    window.AndroidBridge.postMessage('Direct AndroidBridge test message');
+                    log('✅ AndroidBridge.postMessage called successfully');
+                } catch (e) {
+                    log('❌ Error calling AndroidBridge.postMessage: ' + e.message);
+                }
+            } else {
+                log('❌ AndroidBridge not available');
+            }
+        }
+
+        function testComposeBridge() {
+            log('Testing ComposeWebViewBridge...');
+            if (window.ComposeWebViewBridge && typeof window.ComposeWebViewBridge.postMessage === 'function') {
+                try {
+                    window.ComposeWebViewBridge.postMessage('ComposeWebViewBridge test message');
+                    log('✅ ComposeWebViewBridge.postMessage called successfully');
+                } catch (e) {
+                    log('❌ Error calling ComposeWebViewBridge.postMessage: ' + e.message);
+                }
+            } else {
+                log('❌ ComposeWebViewBridge not available');
+            }
+        }
+
+        // Check on page load
+        window.addEventListener('load', function() {
+            log('Page loaded');
+            checkWindow();
+        });
+
+        // Listen for bridge ready event
+        window.addEventListener('ComposeWebViewBridgeReady', function() {
+            log('✅ ComposeWebViewBridgeReady event fired!');
+            document.getElementById('status').textContent = '✅ Bridge is ready!';
+            document.getElementById('status').style.background = '#d4edda';
+        });
+
+        // Initial check
+        setTimeout(function() {
+            log('Initial check after 1 second');
+            checkWindow();
+        }, 1000);
+    </script>
+</body>
+</html>
+
