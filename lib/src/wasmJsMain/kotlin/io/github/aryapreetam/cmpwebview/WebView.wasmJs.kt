@@ -2,7 +2,11 @@ package io.github.aryapreetam.cmpwebview
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.WebElementView
@@ -29,13 +33,15 @@ internal actual fun WebViewImpl(
       style.width = "100%"
       style.height = "100%"
       style.border = "none"
-      // sandbox could be tuned if needed; keep default for broader compatibility
     }
   }
 
+  // Track only the current URL to avoid redundant loads
+  var currentUrl by remember { mutableStateOf<String?>(null) }
+
   // Lifecycle: attach/remove global and element listeners once
   DisposableEffect(Unit) {
-    // Message listener for bridge communication
+    // Message listener for bridge communication (JS bridge messages)
     val messageHandler: (Event) -> Unit = { event ->
       if (event is MessageEvent) {
         callbacks.onScriptResult?.invoke(event.data.toString())
@@ -46,12 +52,10 @@ internal actual fun WebViewImpl(
     // Load finished callback
     val loadHandler: (Event) -> Unit = {
       callbacks.onLoadFinished?.invoke()
-      // Note: Bridge script injection in WASM only works for HTML content (srcdoc)
-      // For external URLs, cross-origin restrictions prevent script injection
     }
     iframe.addEventListener("load", loadHandler)
 
-    // Error handler (not all failures trigger this for iframes)
+    // Error handler
     val errorHandler: (Event) -> Unit = {
       callbacks.onLoadError?.invoke("Failed to load content")
     }
@@ -61,41 +65,47 @@ internal actual fun WebViewImpl(
       window.removeEventListener("message", messageHandler)
       iframe.removeEventListener("load", loadHandler)
       iframe.removeEventListener("error", errorHandler)
-      // Do NOT remove the iframe element here; Compose owns its lifecycle
     }
   }
 
-  // React to content changes: set src/srcdoc. Do not tear down the element itself.
-  DisposableEffect(content) {
-    // Signal load start before navigating the iframe
-    callbacks.onLoadStarted?.invoke()
+  // Use LaunchedEffect to handle navigation when content changes
+  // Key on the actual URL/HTML string to prevent duplicate launches
+  val contentKey = remember(content) {
+    when (content) {
+      is WebViewContent.Url -> "url:${content.url}"
+      is WebViewContent.Html -> "html:${content.hashCode()}"
+    }
+  }
 
+  LaunchedEffect(contentKey) {
     when (content) {
       is WebViewContent.Url -> {
-        // Clear any previous srcdoc to ensure URL takes effect
-        if (iframe.srcdoc.isNotEmpty()) {
-          iframe.srcdoc = ""
+        val targetUrl = content.url
+        // Only navigate if URL actually changed (DOM-level guard)
+        if (currentUrl != targetUrl) {
+          currentUrl = targetUrl
+          // Attempt to set URL; will be a no-op if same as last
+          if (setUrlIfChangedJs(iframe, targetUrl)) {
+            callbacks.onLoadStarted?.invoke()
+          }
         }
-        iframe.src = content.url
       }
       is WebViewContent.Html -> {
+        currentUrl = null
         // Build HTML with optional base URL and bridge script
         val htmlWithBridge = buildHtmlForSrcDoc(content.htmlContent, content.baseUrl)
-        // Clear src so srcdoc is used
-        if (iframe.src.isNotEmpty()) {
-          iframe.src = "about:blank"
+        // Attempt to set srcdoc; will be a no-op if same as last
+        if (setSrcDocIfChangedJs(iframe, htmlWithBridge)) {
+          callbacks.onLoadStarted?.invoke()
         }
-        iframe.srcdoc = htmlWithBridge
       }
     }
-
-    onDispose { /* nothing on content swap */ }
   }
 
   WebElementView(
     factory = { iframe },
     modifier = modifier,
-    update = { /* content changes handled by DisposableEffect(content) */ }
+    update = { /* content changes handled by LaunchedEffect(contentKey) */ }
   )
 }
 
@@ -142,7 +152,7 @@ private fun buildHtmlForSrcDoc(html: String, baseUrl: String?): String {
       <html>
         <head>
           $baseTag
-          $bridgeTag
+          $BRIDGE_SCRIPT
         </head>
         <body>
           $html
@@ -152,3 +162,12 @@ private fun buildHtmlForSrcDoc(html: String, baseUrl: String?): String {
     }
   }
 }
+
+// JS interop helpers for idempotent navigation at DOM level
+@OptIn(ExperimentalWasmJsInterop::class)
+@JsFun("(el, url) => { const prev = (el.dataset && el.dataset.cmpwvUrl) || null; if (prev === url) return false; if (el.dataset) el.dataset.cmpwvUrl = url; if (el.hasAttribute('srcdoc')) el.removeAttribute('srcdoc'); el.src = url; return true; }")
+private external fun setUrlIfChangedJs(el: HTMLIFrameElement, url: String): Boolean
+
+@OptIn(ExperimentalWasmJsInterop::class)
+@JsFun("(el, html) => { const h = String(html); const prev = (el.dataset && el.dataset.cmpwvHtml) || null; if (prev === h) return false; if (el.dataset) el.dataset.cmpwvHtml = h; el.removeAttribute('src'); el.srcdoc = h; return true; }")
+private external fun setSrcDocIfChangedJs(el: HTMLIFrameElement, html: String): Boolean
