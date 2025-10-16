@@ -8,6 +8,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import io.github.aryapreetam.cmpwebview.WebView
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 
 /**
  * Demo screen for switching between URL and HTML content
@@ -26,7 +28,7 @@ fun ContentSwitchingScreen(onBack: () -> Unit) {
         title = { Text("Content Switching Demo") },
         navigationIcon = {
           IconButton(onClick = onBack) {
-            Text("←", style = MaterialTheme.typography.headlineMedium)
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
           }
         }
       )
@@ -44,7 +46,7 @@ fun ContentSwitchingScreen(onBack: () -> Unit) {
       ) {
         Column(modifier = Modifier.padding(16.dp)) {
           Text(
-            text = "Current Mode: ${contentMode.name}",
+            text = "Current Mode: ${'$'}{contentMode.name}",
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.padding(bottom = 8.dp)
           )

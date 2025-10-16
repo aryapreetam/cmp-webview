@@ -12,6 +12,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import io.github.aryapreetam.cmpwebview.WebView
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 
 @Composable
 fun BridgeDemoScreen(onBack: () -> Unit = {}) {
@@ -46,12 +49,14 @@ fun BridgeDemoScreen(onBack: () -> Unit = {}) {
           .padding(16.dp)
           .verticalScroll(rememberScrollState())
       ) {
-        // Add back button to go to home screen
+        // Back button to go to home screen
         Button(
           onClick = onBack,
           modifier = Modifier.padding(bottom = 16.dp)
         ) {
-          Text("← Back to Home")
+          Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+          Spacer(Modifier.width(8.dp))
+          Text("Back to Home")
         }
 
         Text(
@@ -104,12 +109,14 @@ fun BridgeDemoScreen(onBack: () -> Unit = {}) {
                 bridgeReady = false
               }
             ) {
-              Text("← Back to Menu")
+              Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+              Spacer(Modifier.width(8.dp))
+              Text("Back to Menu")
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // New: Bridge status row
+            // Bridge status row
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
               Text(
                 text = if (bridgeReady) "Bridge: Ready" else "Bridge: Waiting…",

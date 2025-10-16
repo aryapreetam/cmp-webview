@@ -9,6 +9,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import io.github.aryapreetam.cmpwebview.WebView
 import kotlinx.coroutines.launch
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 
 /**
  * Demo screen for different loading state patterns
@@ -27,7 +29,7 @@ fun LoadingStateScreen(onBack: () -> Unit) {
         title = { Text("Loading States Demo") },
         navigationIcon = {
           IconButton(onClick = onBack) {
-            Text("←", style = MaterialTheme.typography.headlineMedium)
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
           }
         }
       )

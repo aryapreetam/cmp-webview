@@ -7,6 +7,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import io.github.aryapreetam.cmpwebview.WebView
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 
 /**
  * Demo screen showing multiple concurrent WebViews
@@ -22,7 +24,7 @@ fun MultiWebViewScreen(onBack: () -> Unit) {
         title = { Text("Multiple WebViews Demo") },
         navigationIcon = {
           IconButton(onClick = onBack) {
-            Text("←", style = MaterialTheme.typography.headlineMedium)
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
           }
         }
       )

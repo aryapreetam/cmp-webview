@@ -8,6 +8,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import io.github.aryapreetam.cmpwebview.WebView
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 
 /**
  * Demo screen for URL loading with different types of web content
@@ -25,7 +27,7 @@ fun UrlLoadingScreen(onBack: () -> Unit) {
         title = { Text("URL Loading Demo") },
         navigationIcon = {
           IconButton(onClick = onBack) {
-            Text("←", style = MaterialTheme.typography.headlineMedium)
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
           }
         }
       )
@@ -57,21 +59,15 @@ fun UrlLoadingScreen(onBack: () -> Unit) {
             Button(
               onClick = { currentUrl = "https://example.com" },
               modifier = Modifier.weight(1f)
-            ) {
-              Text("Example", maxLines = 1)
-            }
+            ) { Text("Example", maxLines = 1) }
             Button(
-              onClick = { currentUrl = "https://www.wikipedia.org" },
+              onClick = { currentUrl = "https://html5test.com" },
               modifier = Modifier.weight(1f)
-            ) {
-              Text("Wikipedia", maxLines = 1)
-            }
+            ) { Text("HTML5 Test", maxLines = 1) }
             Button(
               onClick = { currentUrl = "https://github.com" },
               modifier = Modifier.weight(1f)
-            ) {
-              Text("GitHub", maxLines = 1)
-            }
+            ) { Text("GitHub", maxLines = 1) }
           }
 
           // Loading state indicator

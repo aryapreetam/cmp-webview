@@ -38,6 +38,8 @@ kotlin {
       implementation(compose.material3)
       implementation(compose.foundation)
       implementation(project(":lib"))
+      @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
+      implementation(compose.materialIconsExtended)
     }
 
     commonTest.dependencies {
@@ -52,8 +54,8 @@ kotlin {
 
     jvmMain.dependencies {
       implementation(compose.desktop.currentOs)
+      implementation("org.slf4j:slf4j-nop:2.0.13")
     }
-
   }
 }
 

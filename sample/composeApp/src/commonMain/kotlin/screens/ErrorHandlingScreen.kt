@@ -8,6 +8,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import io.github.aryapreetam.cmpwebview.WebView
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 
 /**
  * Demo screen for error handling scenarios
@@ -26,7 +28,7 @@ fun ErrorHandlingScreen(onBack: () -> Unit) {
         title = { Text("Error Handling Demo") },
         navigationIcon = {
           IconButton(onClick = onBack) {
-            Text("←", style = MaterialTheme.typography.headlineMedium)
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
           }
         }
       )
