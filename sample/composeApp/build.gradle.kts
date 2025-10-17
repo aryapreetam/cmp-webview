@@ -1,7 +1,9 @@
 @file:OptIn(ExperimentalWasmDsl::class)
 
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
+import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree
 
 plugins {
   alias(libs.plugins.multiplatform)
@@ -14,7 +16,10 @@ plugins {
 kotlin {
   jvmToolchain(17)
 
-  androidTarget()
+  androidTarget {
+    @OptIn(ExperimentalKotlinGradlePluginApi::class)
+    instrumentedTestVariant.sourceSetTree.set(KotlinSourceSetTree.test)
+  }
   jvm()
   wasmJs {
     browser()
@@ -70,7 +75,13 @@ android {
     applicationId = "sample.app"
     versionCode = 1
     versionName = "1.0.0"
+    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
+}
+
+dependencies {
+  androidTestImplementation("androidx.compose.ui:ui-test-junit4-android:1.9.0")
+  debugImplementation("androidx.compose.ui:ui-test-manifest:1.9.0")
 }
 
 compose.desktop {
