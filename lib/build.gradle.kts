@@ -14,7 +14,12 @@ plugins {
 kotlin {
   jvmToolchain(17)
 
-  androidTarget { publishLibraryVariants("release") }
+  android {
+    namespace = "io.github.aryapreetam.cmpwebview"
+    compileSdk = 35
+    minSdk = 21
+    withHostTest {  }
+  }
   jvm()
   wasmJs { browser() }
   iosX64()
@@ -47,15 +52,6 @@ kotlin {
         freeCompilerArgs.add("-Xexport-kdoc")
       }
     }
-  }
-}
-
-android {
-  namespace = "io.github.aryapreetam.cmpwebview"
-  compileSdk = 35
-
-  defaultConfig {
-    minSdk = 21
   }
 }
 
