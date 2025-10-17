@@ -1,11 +1,46 @@
-appId: ${ APP_ID }
+appId: sample.app # Replace with your actual app ID
 ---
 - launchApp
-- assertVisible: "Fibonacci Generator"
+- assertVisible: "CMP WebView Demo" # Home screen title
+
+# Navigate to HTML Loading Demo
+- tapOn: "HTML Loading"
+- assertVisible: "HTML Loading Demo"
+
+# Verify demo selector is visible
+- assertVisible: "Select HTML demo:"
+
+# Verify the Basic button is selected by default
+- assertVisible: "Basic"
+
+# Verify the WebView loaded and displays HTML content
+- assertVisible: "Hello from HTML!"
+
+# Verify the HTML content details
+- assertVisible: "This content is rendered from an HTML string."
+
+# Test switching to Base URL demo
+- tapOn: "Base URL"
+- assertVisible: "BaseURL Demo"
+- assertVisible: "These links are resolved relative to the baseUrl:"
+
+# Test switching to Interactive demo
+- tapOn: "Interactive"
+- assertVisible: "Interactive HTML"
+- assertVisible: "Click the buttons to interact:"
+
+# Test the interactive counter functionality
+- assertVisible: "0" # Initial counter value
+- tapOn: "Increment"
+- assertVisible: "1"
+- tapOn: "Increment"
+- assertVisible: "2"
+- tapOn: "Decrement"
+- assertVisible: "1"
+- tapOn: "Reset"
+- assertVisible: "0"
+
+# Navigate back to home
 - tapOn:
-    text: "Enter a number(1-9)"
-- inputText: "1"
-- assertVisible: "First fibonacci number=0"
-- eraseText
-- inputText: "2"
-- assertVisible: "First 2 fibonacci numbers=0, 1"
+    point: "5%,5%" # Tap on back button (top-left corner)
+- assertVisible: "CMP WebView Demo"

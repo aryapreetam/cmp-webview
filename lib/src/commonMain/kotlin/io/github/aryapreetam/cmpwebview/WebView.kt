@@ -15,39 +15,18 @@ import io.github.aryapreetam.cmpwebview.internal.models.WebViewContent
 /**
  * WebView composable for loading remote URLs.
  *
- * Loads web content from a remote URL with optional custom headers. Supports JavaScript bridge
- * communication via the ComposeWebViewBridge JavaScript API.
+ * Loads web content from a remote URL with optional custom headers. Supports JavaScript-to-Compose
+ * communication via the `ComposeWebViewBridge.postMessage()` JavaScript API.
  *
- * ## Security Considerations
- * - Only HTTPS URLs are recommended for production use
- * - URLs with dangerous schemes (javascript:, vbscript:, file:) are rejected
- * - Validate and sanitize URLs from user input before loading
- * - Use custom headers cautiously to avoid exposing sensitive data
+ * **Note:** Android requires `INTERNET` permission in AndroidManifest.xml to load remote content.
  *
- * ## Testing
- * Use `Modifier.testTag()` to identify the WebView in UI tests:
+ * ## Example
  * ```kotlin
  * WebView(
- *     url = "https://example.com",
- *     modifier = Modifier.testTag("my-webview")
- * )
- * composeTestRule.onNodeWithTag("my-webview").assertExists()
- * ```
- *
- * ## Accessibility
- * The WebView automatically provides semantic information for screen readers,
- * including content description and loading state.
- *
- * ## Example Usage
- * ```kotlin
- * WebView(
- *     url = "https://example.com",
- *     modifier = Modifier.testTag("example-webview"),
- *     headers = mapOf("Authorization" to "Bearer token"),
- *     onLoadStarted = { println("Loading started") },
- *     onLoadFinished = { println("Loading finished") },
- *     onLoadError = { error -> println("Error: $error") },
- *     onScriptResult = { message -> println("JS message: $message") }
+ *   url = "https://example.com",
+ *   modifier = Modifier.fillMaxSize(),
+ *   onLoadFinished = { println("Page loaded") },
+ *   onScriptResult = { message -> println("From JS: $message") }
  * )
  * ```
  *
@@ -105,37 +84,23 @@ fun WebView(
 /**
  * WebView composable for loading HTML content.
  *
- * Displays HTML content directly without loading from a remote server. Useful for
- * offline content, dynamically generated HTML, or embedded content.
+ * Displays HTML content directly without loading from a remote server. Useful for offline content,
+ * dynamically generated HTML, or embedded resources.
  *
- * ## Security Considerations
- * - Sanitize HTML content from untrusted sources to prevent XSS attacks
- * - Be cautious with baseUrl - it affects relative link resolution
- * - JavaScript in HTML content can communicate via ComposeWebViewBridge
+ * **Tip:** Use `baseUrl` to resolve relative links and resources in your HTML content.
  *
- * ## Testing
- * Use `Modifier.testTag()` to identify the WebView in UI tests:
+ * ## Example
  * ```kotlin
  * WebView(
- *     htmlContent = "<html><body><h1>Hello</h1></body></html>",
- *     modifier = Modifier.testTag("html-webview")
- * )
- * composeTestRule.onNodeWithTag("html-webview").assertExists()
- * ```
- *
- * ## Accessibility
- * The WebView automatically provides semantic information for screen readers,
- * including content description and loading state.
- *
- * ## Example Usage
- * ```kotlin
- * WebView(
- *     htmlContent = "<html><body><h1>Hello World</h1></body></html>",
- *     modifier = Modifier.testTag("html-webview"),
- *     baseUrl = "https://example.com",
- *     onLoadStarted = { println("Loading started") },
- *     onLoadFinished = { println("Loading finished") },
- *     onScriptResult = { message -> println("JS message: $message") }
+ *   htmlContent = """
+ *     <html><body>
+ *       <h1>Hello World</h1>
+ *       <button onclick="ComposeWebViewBridge.postMessage('clicked')">
+ *         Click Me
+ *       </button>
+ *     </body></html>
+ *   """.trimIndent(),
+ *   onScriptResult = { message -> println("Button: $message") }
  * )
  * ```
  *

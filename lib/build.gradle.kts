@@ -66,7 +66,7 @@ dependencies {
 
 // Configure Dokka V2 extension
 dokka {
-  moduleName.set("CMP WebView")
+  moduleName.set("cmp-webview")
 
   dokkaPublications.html {
     suppressObviousFunctions.set(false)
@@ -79,7 +79,7 @@ dokka {
     includes.from("src/commonMain/kotlin/io/github/aryapreetam/cmpwebview/package.md")
 
     // Add module documentation
-    displayName.set("CMP WebView")
+//    displayName.set("Common")
 
     // Add source links to GitHub
     sourceLink {
