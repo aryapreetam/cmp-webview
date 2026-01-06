@@ -7,9 +7,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.WebElementView
+import io.github.aryapreetam.cmpwebview.internal.bridge.unwrapBridgeMessage
 import io.github.aryapreetam.cmpwebview.internal.constants.BRIDGE_SCRIPT
 import io.github.aryapreetam.cmpwebview.internal.models.WebViewCallbacks
 import io.github.aryapreetam.cmpwebview.internal.models.WebViewContent
@@ -27,6 +29,8 @@ internal actual fun WebViewImpl(
   callbacks: WebViewCallbacks,
   modifier: Modifier
 ) {
+  val latestCallbacks by rememberUpdatedState(callbacks)
+
   // Create the iframe once and let Compose manage its presence in the DOM
   val iframe = remember {
     (document.createElement("iframe") as HTMLIFrameElement).apply {
@@ -42,22 +46,24 @@ internal actual fun WebViewImpl(
   // Lifecycle: attach/remove global and element listeners once
   DisposableEffect(Unit) {
     // Message listener for bridge communication (JS bridge messages)
-    val messageHandler: (Event) -> Unit = { event ->
-      if (event is MessageEvent) {
-        callbacks.onScriptResult?.invoke(event.data.toString())
-      }
+    val messageHandler: (Event) -> Unit = messageHandler@{ event ->
+      val messageEvent = event as? MessageEvent ?: return@messageHandler
+      val expectedSource = iframe.contentWindow
+      if (expectedSource == null || messageEvent.source != expectedSource) return@messageHandler
+      val rawMessage = messageEvent.data?.toString() ?: "null"
+      latestCallbacks.onScriptResult?.invoke(unwrapBridgeMessage(rawMessage))
     }
     window.addEventListener("message", messageHandler)
 
     // Load finished callback
     val loadHandler: (Event) -> Unit = {
-      callbacks.onLoadFinished?.invoke()
+      latestCallbacks.onLoadFinished?.invoke()
     }
     iframe.addEventListener("load", loadHandler)
 
     // Error handler
     val errorHandler: (Event) -> Unit = {
-      callbacks.onLoadError?.invoke("Failed to load content")
+      latestCallbacks.onLoadError?.invoke("Failed to load content")
     }
     iframe.addEventListener("error", errorHandler)
 
@@ -86,7 +92,7 @@ internal actual fun WebViewImpl(
           currentUrl = targetUrl
           // Attempt to set URL; will be a no-op if same as last
           if (setUrlIfChangedJs(iframe, targetUrl)) {
-            callbacks.onLoadStarted?.invoke()
+            latestCallbacks.onLoadStarted?.invoke()
           }
         }
       }
@@ -96,7 +102,7 @@ internal actual fun WebViewImpl(
         val htmlWithBridge = buildHtmlForSrcDoc(content.htmlContent, content.baseUrl)
         // Attempt to set srcdoc; will be a no-op if same as last
         if (setSrcDocIfChangedJs(iframe, htmlWithBridge)) {
-          callbacks.onLoadStarted?.invoke()
+          latestCallbacks.onLoadStarted?.invoke()
         }
       }
     }

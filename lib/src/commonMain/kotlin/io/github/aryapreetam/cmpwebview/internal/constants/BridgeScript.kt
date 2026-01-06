@@ -1,5 +1,7 @@
 package io.github.aryapreetam.cmpwebview.internal.constants
 
+import io.github.aryapreetam.cmpwebview.internal.bridge.BRIDGE_ENVELOPE_PREFIX
+
 /**
  * Unified JavaScript bridge script injected into all web content.
  * Provides consistent ComposeWebViewBridge API across all platforms.
@@ -14,6 +16,9 @@ internal const val BRIDGE_SCRIPT = """
     
     // Message size limit: 10MB
     const MAX_MESSAGE_SIZE = 10 * 1024 * 1024;
+
+    // Envelope prefix for JS→Compose messages (parsed on the Kotlin side).
+    const ENVELOPE_PREFIX = '$BRIDGE_ENVELOPE_PREFIX';
     
     /**
      * Sanitize message to prevent injection attacks.
@@ -46,11 +51,12 @@ internal const val BRIDGE_SCRIPT = """
          */
         postMessage: function(message) {
             const sanitizedMessage = sanitizeMessage(message);
+            const envelope = ENVELOPE_PREFIX + sanitizedMessage.length + ':' + sanitizedMessage;
             
             // Try Android bridge
             if (window.AndroidBridge && typeof window.AndroidBridge.postMessage === 'function') {
                 try {
-                    window.AndroidBridge.postMessage(sanitizedMessage);
+                    window.AndroidBridge.postMessage(envelope);
                     return;
                 } catch (e) {
                     console.error('Android bridge error:', e);
@@ -62,7 +68,7 @@ internal const val BRIDGE_SCRIPT = """
                 window.webkit.messageHandlers && 
                 window.webkit.messageHandlers.iosBridge) {
                 try {
-                    window.webkit.messageHandlers.iosBridge.postMessage(sanitizedMessage);
+                    window.webkit.messageHandlers.iosBridge.postMessage(envelope);
                     return;
                 } catch (e) {
                     console.error('iOS bridge error:', e);
@@ -72,7 +78,7 @@ internal const val BRIDGE_SCRIPT = """
             // Try Desktop (JavaFX) bridge
             if (window.javaBridge && typeof window.javaBridge.postMessage === 'function') {
                 try {
-                    window.javaBridge.postMessage(sanitizedMessage);
+                    window.javaBridge.postMessage(envelope);
                     return;
                 } catch (e) {
                     console.error('Desktop bridge error:', e);
@@ -82,7 +88,7 @@ internal const val BRIDGE_SCRIPT = """
             // Try Web/WASM bridge (postMessage to parent)
             if (window.parent && window.parent !== window) {
                 try {
-                    window.parent.postMessage(sanitizedMessage, '*');
+                    window.parent.postMessage(envelope, '*');
                     return;
                 } catch (e) {
                     console.error('Web bridge error:', e);

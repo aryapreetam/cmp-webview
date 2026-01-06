@@ -1,6 +1,7 @@
 package io.github.aryapreetam.cmpwebview.internal.constants
 
 import io.github.aryapreetam.cmpwebview.internal.constants.BRIDGE_SCRIPT
+import io.github.aryapreetam.cmpwebview.internal.bridge.BRIDGE_ENVELOPE_PREFIX
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
@@ -48,6 +49,14 @@ class BridgeScriptTest {
     assertTrue(
       BRIDGE_SCRIPT.contains("10 * 1024 * 1024"),
       "Message size limit should be 10MB"
+    )
+  }
+
+  @Test
+  fun `Bridge script should embed envelope prefix`() {
+    assertTrue(
+      BRIDGE_SCRIPT.contains(BRIDGE_ENVELOPE_PREFIX),
+      "Script should include the Kotlin envelope prefix to keep receivers in sync"
     )
   }
 

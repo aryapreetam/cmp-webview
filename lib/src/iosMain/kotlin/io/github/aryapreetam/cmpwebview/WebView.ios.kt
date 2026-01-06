@@ -7,6 +7,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.UIKitView
+import io.github.aryapreetam.cmpwebview.internal.bridge.unwrapBridgeMessage
 import io.github.aryapreetam.cmpwebview.internal.constants.BRIDGE_SCRIPT
 import io.github.aryapreetam.cmpwebview.internal.models.WebViewCallbacks
 import io.github.aryapreetam.cmpwebview.internal.models.WebViewContent
@@ -101,7 +102,7 @@ private class IOSMessageHandler(
     didReceiveScriptMessage: WKScriptMessage
   ) {
     val message = didReceiveScriptMessage.body as? String
-    message?.let { onScriptResult?.invoke(it) }
+    message?.let { onScriptResult?.invoke(unwrapBridgeMessage(it)) }
   }
 }
 

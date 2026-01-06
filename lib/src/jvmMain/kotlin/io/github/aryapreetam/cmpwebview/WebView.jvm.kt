@@ -7,6 +7,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.SwingPanel
+import io.github.aryapreetam.cmpwebview.internal.bridge.unwrapBridgeMessage
 import dev.datlag.kcef.KCEF
 import dev.datlag.kcef.KCEFClient
 import io.github.aryapreetam.cmpwebview.internal.constants.BRIDGE_SCRIPT
@@ -295,7 +296,8 @@ private fun installGlobalHandlersIfNeeded(kcefClient: KCEFClient) {
       val b = browser ?: return false
       if (request?.startsWith("bridge:") == true) {
         val message = request.substring(7)
-        KCEFState.callbacksByBrowser[b]?.onScriptResult?.invoke(message)
+        val payload = unwrapBridgeMessage(message)
+        KCEFState.callbacksByBrowser[b]?.onScriptResult?.invoke(payload)
         callback?.success("")
         return true
       }

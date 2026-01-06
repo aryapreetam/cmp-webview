@@ -5,6 +5,7 @@ import android.webkit.JavascriptInterface
 import android.webkit.WebView as AndroidWebView
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -16,6 +17,7 @@ import com.kevinnzou.web.rememberWebViewNavigator
 import com.kevinnzou.web.rememberWebViewState
 import com.kevinnzou.web.rememberWebViewStateWithHTMLData
 import io.github.aryapreetam.cmpwebview.internal.constants.BRIDGE_SCRIPT
+import io.github.aryapreetam.cmpwebview.internal.bridge.unwrapBridgeMessage
 import io.github.aryapreetam.cmpwebview.internal.models.WebViewCallbacks
 import io.github.aryapreetam.cmpwebview.internal.models.WebViewContent
 
@@ -25,8 +27,14 @@ internal actual fun WebViewImpl(
   callbacks: WebViewCallbacks,
   modifier: Modifier
 ) {
-  val messageBridge = remember { AndroidBridge(callbacks.onScriptResult) }
+  val messageBridge = remember { AndroidBridge() }
   var webViewInstance by remember { mutableStateOf<AndroidWebView?>(null) }
+
+  SideEffect {
+    messageBridge.onScriptResult = callbacks.onScriptResult
+  }
+
+  val bridgeEnabled = callbacks.onScriptResult != null
 
   // Create appropriate WebView state based on content type
   val webViewState = when (content) {
@@ -46,18 +54,32 @@ internal actual fun WebViewImpl(
   val navigator = rememberWebViewNavigator()
 
   // Monitor loading state and trigger callbacks
-  LaunchedEffect(webViewState.loadingState, webViewInstance) {
+  LaunchedEffect(webViewState.loadingState, webViewInstance, bridgeEnabled) {
     when (webViewState.loadingState) {
       is LoadingState.Loading -> {
         callbacks.onLoadStarted?.invoke()
       }
       is LoadingState.Finished -> {
         // Inject bridge script once per successful load (deterministic, no polling)
-        webViewInstance?.evaluateJavascript(BRIDGE_SCRIPT, null)
+        if (bridgeEnabled) {
+          webViewInstance?.evaluateJavascript(BRIDGE_SCRIPT, null)
+        }
         callbacks.onLoadFinished?.invoke()
       }
       is LoadingState.Initializing -> {
       }
+    }
+  }
+
+  // Ensure the JS interface is only installed when the bridge is actually used.
+  LaunchedEffect(bridgeEnabled, webViewInstance) {
+    val webView = webViewInstance ?: return@LaunchedEffect
+    if (bridgeEnabled) {
+      @SuppressLint("JavascriptInterface") // AndroidBridge has @JavascriptInterface
+      webView.addJavascriptInterface(messageBridge, "AndroidBridge")
+      webView.evaluateJavascript(BRIDGE_SCRIPT, null)
+    } else {
+      webView.removeJavascriptInterface("AndroidBridge")
     }
   }
 
@@ -76,13 +98,6 @@ internal actual fun WebViewImpl(
         javaScriptEnabled = true
         domStorageEnabled = true
       }
-
-      // Add JavaScript bridge interface
-      @SuppressLint("JavascriptInterface") // AndroidBridge class has @JavascriptInterface annotation
-      webView.addJavascriptInterface(messageBridge, "AndroidBridge")
-
-      // Inject bridge script immediately for initial content
-      webView.evaluateJavascript(BRIDGE_SCRIPT, null)
     },
     onDispose = { webView ->
       webView.removeJavascriptInterface("AndroidBridge")
@@ -91,12 +106,14 @@ internal actual fun WebViewImpl(
   )
 }
 
-private class AndroidBridge(private val onScriptResult: ((String) -> Unit)?) {
+private class AndroidBridge {
+  var onScriptResult: ((String) -> Unit)? = null
+
   @JavascriptInterface
   @Suppress("unused") // Called from JavaScript
   fun postMessage(message: String) {
     try {
-      onScriptResult?.invoke(message)
+      onScriptResult?.invoke(unwrapBridgeMessage(message))
     } catch (e: Exception) {
       // Best-effort: avoid throwing across JS boundary
     }
