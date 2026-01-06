@@ -472,10 +472,10 @@ Double-check all 5 GitHub secrets are set correctly:
 
 ```bash
 # Ensure version in lib/build.gradle.kts is correct
-# coordinates("io.github.yourname", "yourlibname", "0.1.0")
+# coordinates("io.github.yourname", "yourlibname", "0.0.1")
 
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.0.1
+git push origin v0.0.1
 ```
 
 ### 10.3 Monitor Release Workflow

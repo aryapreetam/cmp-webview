@@ -9,15 +9,27 @@ This package provides two primary composable functions for displaying web conten
 - `WebView(url: String, ...)` - Load content from a remote URL
 - `WebView(htmlContent: String, ...)` - Display HTML content directly
 
-Both functions work consistently across Android, iOS, Desktop, and Web platforms.
+Both functions share the same API across Android, iOS, Desktop, and Web platforms, but some capabilities are platform-dependent.
+
+## Capability matrix (quick truth table)
+
+| Capability | Android | iOS | Desktop (JVM) | Web (WASM) |
+|---|---:|---:|---:|---:|
+| Load remote `url` | ✅ | ✅ | ✅ | ✅ *(iframe; subject to CSP/X-Frame-Options)* |
+| Load `htmlContent` | ✅ | ✅ | ✅ | ✅ |
+| Custom request headers (`headers`) | ✅ | ❌ | ❌ | ❌ |
+| JS → Compose (`onScriptResult`) with `htmlContent` | ✅ | ✅ | ✅ | ✅ |
+| JS → Compose (`onScriptResult`) with remote `url` | ✅ *(bridge injected)* | ✅ *(bridge injected)* | ✅ *(bridge injected)* | ⚠️ *best-effort (no cross-origin injection)* |
+
+Notes:
+- On **Web/WASM**, browsers prevent injecting scripts into **cross-origin** iframes.
+- Custom headers are currently supported on **Android only**.
 
 ## Basic Usage
 
 ### Loading a Remote URL
 
 ```kotlin
-import io.github.aryapreetam.cmpwebview.WebView
-
 WebView(
   url = "https://example.com",
   modifier = Modifier.fillMaxSize()
@@ -45,10 +57,6 @@ WebView(
 Place your HTML files in `commonMain/composeResources/files/` and load them using Compose Resources:
 
 ```kotlin
-import io.github.aryapreetam.cmpwebview.WebView
-import org.jetbrains.compose.resources.ExperimentalResourceApi
-import cmpwebviewdemo.composeapp.generated.resources.Res
-
 @OptIn(ExperimentalResourceApi::class)
 @Composable
 fun BridgeDemo() {

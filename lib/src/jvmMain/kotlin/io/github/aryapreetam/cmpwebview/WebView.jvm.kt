@@ -33,6 +33,11 @@ private object KCEFState {
   var client: KCEFClient? = null
   var initError: String? = null
   var downloadProgress: Float = -1f
+
+  var globalHandlersInstalled: Boolean = false
+  val callbacksByBrowser: MutableMap<CefBrowser, WebViewCallbacks> =
+    Collections.synchronizedMap(WeakHashMap())
+  var messageRouter: CefMessageRouter? = null
 }
 
 @Composable
@@ -113,6 +118,8 @@ internal actual fun WebViewImpl(
       // Client already exists, use it
       client = KCEFState.client
     }
+
+    client?.let { installGlobalHandlersIfNeeded(it) }
   }
 
   Box(modifier = modifier, contentAlignment = Alignment.Center) {
@@ -131,145 +138,64 @@ internal actual fun WebViewImpl(
         BasicText("Creating browser...")
       }
       else -> {
-        // Create browser resources that cleanup properly when content changes
-        val browserResources = remember(content) {
-          BrowserResources()
-        }
+        val kcefClient = client!!
+        val browserResources = remember { BrowserResources() }
 
-        DisposableEffect(content) {
-          onDispose {
-            browserResources.cleanup(client)
+        // Keep the global browser→callbacks routing up to date.
+        SideEffect {
+          browserResources.browser?.let { b ->
+            KCEFState.callbacksByBrowser[b] = callbacks
           }
         }
 
-        // Key ensures SwingPanel is recreated when content changes
-        key(content) {
-          SwingPanel(
-            factory = {
-              val panel = JPanel(BorderLayout())
-              val kcefClient = client!!
-
-              // Create load handler FIRST, before browser creation
-              val handler = object : CefLoadHandlerAdapter() {
-                override fun onLoadStart(
-                  browser: CefBrowser?,
-                  frame: CefFrame?,
-                  transitionType: CefRequest.TransitionType?
-                ) {
-                  val f = frame ?: return
-                  if (!f.isMain) return
-                  callbacks.onLoadStarted?.invoke()
-                }
-
-                override fun onLoadEnd(browser: CefBrowser?, frame: CefFrame?, httpStatusCode: Int) {
-                  val f = frame ?: return
-                  if (!f.isMain) return
-                  // Inject bridge script (minimal, no logs)
-                  val bridgeSetupScript = """
-                    window.javaBridge = {
-                      postMessage: function(message) {
-                        if (typeof window.cefQuery === 'function') {
-                          window.cefQuery({
-                            request: 'bridge:' + message,
-                            persistent: false
-                          });
-                        }
-                      }
-                    };
-                    $BRIDGE_SCRIPT
-                  """.trimIndent()
-
-                  val scriptUrl = f.url ?: "about:blank"
-                  f.executeJavaScript(bridgeSetupScript, scriptUrl, 0)
-                  callbacks.onLoadFinished?.invoke()
-                }
-
-                override fun onLoadError(
-                  browser: CefBrowser?,
-                  frame: CefFrame?,
-                  errorCode: org.cef.handler.CefLoadHandler.ErrorCode?,
-                  errorText: String?,
-                  failedUrl: String?
-                ) {
-                  val f = frame ?: return
-                  if (!f.isMain) return
-                  callbacks.onLoadError?.invoke("$errorCode: $errorText ($failedUrl)")
-                }
-              }
-
-              // Add load handler BEFORE creating browser
-              kcefClient.addLoadHandler(handler)
-              browserResources.loadHandler = handler
-
-              // Create and add message router BEFORE creating the browser
-              val msgRouterConfig = CefMessageRouter.CefMessageRouterConfig(
-                "cefQuery",
-                "cefQueryCancel"
-              )
-              val msgRouter = CefMessageRouter.create(msgRouterConfig)
-              msgRouter.addHandler(object : CefMessageRouterHandlerAdapter() {
-                override fun onQuery(
-                  browser: CefBrowser?,
-                  frame: CefFrame?,
-                  queryId: Long,
-                  request: String?,
-                  persistent: Boolean,
-                  callback: CefQueryCallback?
-                ): Boolean {
-                  if (request?.startsWith("bridge:") == true) {
-                    val message = request.substring(7)
-                    callbacks.onScriptResult?.invoke(message)
-                    callback?.success("")
-                    return true
-                  }
-                  return false
-                }
-              }, true)
-              kcefClient.addMessageRouter(msgRouter)
-              browserResources.messageRouter = msgRouter
-
-              val url = when (content) {
-                is WebViewContent.Url -> content.url
-                is WebViewContent.Html -> {
-                  "data:text/html;base64,${Base64.getEncoder().encodeToString(content.htmlContent.toByteArray())}"
-                }
-              }
-
-              val browser = kcefClient.createBrowser(url, CefRendering.DEFAULT, false)
-              browserResources.browser = browser
-
-              panel.add(browser.uiComponent, BorderLayout.CENTER)
-              panel
-            },
-            update = {},
-            modifier = Modifier.fillMaxSize()
-          )
+        // Navigate when content changes (avoid recreating the browser).
+        LaunchedEffect(content, browserResources.browser) {
+          val browser = browserResources.browser ?: return@LaunchedEffect
+          val targetUrl = contentToDesktopUrl(content)
+          if (browserResources.lastLoadedUrl != targetUrl) {
+            browserResources.lastLoadedUrl = targetUrl
+            browser.loadURL(targetUrl)
+          }
         }
+
+        // Cleanup only when leaving composition.
+        DisposableEffect(Unit) {
+          onDispose {
+            browserResources.cleanup(kcefClient)
+          }
+        }
+
+        SwingPanel(
+          factory = {
+            val panel = JPanel(BorderLayout())
+
+            val initialUrl = contentToDesktopUrl(content)
+            val browser = kcefClient.createBrowser(initialUrl, CefRendering.DEFAULT, false)
+            browserResources.browser = browser
+            browserResources.lastLoadedUrl = initialUrl
+
+            // Register callbacks for this browser instance.
+            KCEFState.callbacksByBrowser[browser] = callbacks
+
+            panel.add(browser.uiComponent, BorderLayout.CENTER)
+            panel
+          },
+          update = {},
+          modifier = Modifier.fillMaxSize()
+        )
       }
     }
   }
 }
 
-// Helper class to manage browser resources that need cleanup
 private class BrowserResources {
   var browser: CefBrowser? = null
-  var messageRouter: CefMessageRouter? = null
-  var loadHandler: CefLoadHandlerAdapter? = null
+  var lastLoadedUrl: String? = null
 
   fun cleanup(client: KCEFClient?) {
-    // Remove and dispose message router
-    messageRouter?.let { router ->
-      try {
-        client?.removeMessageRouter(router)
-        router.dispose()
-      } catch (_: Exception) {
-        // ignore
-      }
+    browser?.let { b ->
+      KCEFState.callbacksByBrowser.remove(b)
     }
-    messageRouter = null
-
-    // Note: KCEF doesn't support removing individual load handlers
-    loadHandler = null
 
     // Close the browser instance
     browser?.let { b ->
@@ -280,5 +206,102 @@ private class BrowserResources {
       }
     }
     browser = null
+    lastLoadedUrl = null
   }
+}
+
+private fun contentToDesktopUrl(content: WebViewContent): String {
+  return when (content) {
+    is WebViewContent.Url -> content.url
+    is WebViewContent.Html -> {
+      "data:text/html;base64,${Base64.getEncoder().encodeToString(content.htmlContent.toByteArray())}"
+    }
+  }
+}
+
+private fun installGlobalHandlersIfNeeded(kcefClient: KCEFClient) {
+  if (KCEFState.globalHandlersInstalled) return
+  KCEFState.globalHandlersInstalled = true
+
+  // Global load handler: routes lifecycle events to the correct composable via browser mapping
+  val loadHandler = object : CefLoadHandlerAdapter() {
+    override fun onLoadStart(
+      browser: CefBrowser?,
+      frame: CefFrame?,
+      transitionType: CefRequest.TransitionType?
+    ) {
+      val b = browser ?: return
+      val f = frame ?: return
+      if (!f.isMain) return
+      KCEFState.callbacksByBrowser[b]?.onLoadStarted?.invoke()
+    }
+
+    override fun onLoadEnd(browser: CefBrowser?, frame: CefFrame?, httpStatusCode: Int) {
+      val b = browser ?: return
+      val f = frame ?: return
+      if (!f.isMain) return
+
+      // Inject bridge script (minimal, no logs)
+      val bridgeSetupScript = """
+        window.javaBridge = {
+          postMessage: function(message) {
+            if (typeof window.cefQuery === 'function') {
+              window.cefQuery({
+                request: 'bridge:' + message,
+                persistent: false
+              });
+            }
+          }
+        };
+        $BRIDGE_SCRIPT
+      """.trimIndent()
+
+      val scriptUrl = f.url ?: "about:blank"
+      f.executeJavaScript(bridgeSetupScript, scriptUrl, 0)
+
+      KCEFState.callbacksByBrowser[b]?.onLoadFinished?.invoke()
+    }
+
+    override fun onLoadError(
+      browser: CefBrowser?,
+      frame: CefFrame?,
+      errorCode: org.cef.handler.CefLoadHandler.ErrorCode?,
+      errorText: String?,
+      failedUrl: String?
+    ) {
+      val b = browser ?: return
+      val f = frame ?: return
+      if (!f.isMain) return
+      KCEFState.callbacksByBrowser[b]?.onLoadError?.invoke("$errorCode: $errorText ($failedUrl)")
+    }
+  }
+  kcefClient.addLoadHandler(loadHandler)
+
+  // Global message router: routes JS→Compose messages using the same browser mapping
+  val msgRouterConfig = CefMessageRouter.CefMessageRouterConfig(
+    "cefQuery",
+    "cefQueryCancel"
+  )
+  val msgRouter = CefMessageRouter.create(msgRouterConfig)
+  msgRouter.addHandler(object : CefMessageRouterHandlerAdapter() {
+    override fun onQuery(
+      browser: CefBrowser?,
+      frame: CefFrame?,
+      queryId: Long,
+      request: String?,
+      persistent: Boolean,
+      callback: CefQueryCallback?
+    ): Boolean {
+      val b = browser ?: return false
+      if (request?.startsWith("bridge:") == true) {
+        val message = request.substring(7)
+        KCEFState.callbacksByBrowser[b]?.onScriptResult?.invoke(message)
+        callback?.success("")
+        return true
+      }
+      return false
+    }
+  }, true)
+  kcefClient.addMessageRouter(msgRouter)
+  KCEFState.messageRouter = msgRouter
 }

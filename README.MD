@@ -29,13 +29,28 @@ Android, iOS, Desktop (JVM), and Web (WASM) platforms with a unified API.
 
 **Key Features:**
 
-- 🌐 Load remote URLs with custom headers
+- 🌐 Load remote URLs (custom headers: Android only)
 - 📄 Display HTML content directly
-- 🔗 Bidirectional JavaScript-to-Compose bridge communication
+- 🔗 JavaScript → Compose messaging (via `onScriptResult`)
 - 🔒 Built-in security protections against dangerous URL schemes
 - ♿ Accessibility support with screen reader compatibility
 - 🧪 Testing support with test tags and semantics
-- 🎯 Consistent API across all platforms
+- 🎯 Single API across all platforms (some capabilities are platform-dependent)
+
+## ✅ Platform capability matrix
+
+| Capability | Android | iOS | Desktop (JVM) | Web (WASM) |
+|---|---:|---:|---:|---:|
+| Load remote `url` | ✅ | ✅ | ✅ | ✅ *(iframe; subject to CSP/X-Frame-Options)* |
+| Load `htmlContent` | ✅ | ✅ | ✅ | ✅ |
+| Custom request headers (`headers`) | ✅ | ❌ | ❌ | ❌ |
+| JS → Compose (`onScriptResult`) with `htmlContent` | ✅ | ✅ | ✅ | ✅ |
+| JS → Compose (`onScriptResult`) with remote `url` | ✅ *(bridge injected)* | ✅ *(bridge injected)* | ✅ *(bridge injected)* | ⚠️ *best-effort (no cross-origin injection)* |
+| Compose → JS | ⏳ planned | ⏳ planned | ⏳ planned | ⏳ planned *(best-effort)* |
+
+Notes:
+- On **Web/WASM**, browsers prevent injecting scripts into **cross-origin** iframes. For reliable messaging on WASM, prefer `htmlContent` or same-origin pages you control.
+- On native targets, bridge injection can still be affected by page security policies (e.g., strict CSP). Treat messaging as best-effort for arbitrary third-party pages.
 
 Wasm Demo:
 [![Try Live Demo](https://img.shields.io/badge/Try%20Live%20Demo-Web%20wasmJs-blueviolet?style=for-the-badge)](https://aryapreetam.github.io/cmp-webview/demo/)
@@ -55,7 +70,7 @@ Add the dependency to your Compose Multiplatform project:
 
 ```toml
 [versions]
-cmpWebview = "0.1.0"
+cmpWebview = "0.0.1"
 
 [libraries]
 cmp-webview = { module = "io.github.aryapreetam:cmp-webview", version.ref = "cmpWebview" }
@@ -82,7 +97,7 @@ kotlin {
   sourceSets {
     val commonMain by getting {
       dependencies {
-        implementation("io.github.aryapreetam:cmp-webview:0.1.0")
+        implementation("io.github.aryapreetam:cmp-webview:0.0.1")
       }
     }
   }
@@ -96,11 +111,6 @@ kotlin {
 ### Load a Remote URL
 
 ```kotlin
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import io.github.aryapreetam.cmpwebview.WebView
-
 @Composable
 fun MyScreen() {
   WebView(
@@ -178,6 +188,8 @@ fun BridgeExample() {
 ## 📖 Usage Guide
 
 ### Loading URLs with Custom Headers
+
+**Note:** Custom headers are currently supported on **Android only**. Other targets will ignore headers or do not support attaching headers to a top-level navigation.
 
 ```kotlin
 WebView(

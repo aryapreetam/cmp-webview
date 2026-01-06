@@ -2,6 +2,8 @@ package io.github.aryapreetam.cmpwebview
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.UIKitView
@@ -24,8 +26,14 @@ internal actual fun WebViewImpl(
   callbacks: WebViewCallbacks,
   modifier: Modifier
 ) {
-  val messageHandler = remember { IOSMessageHandler(callbacks.onScriptResult) }
-  val navigationDelegate = remember { IOSNavigationDelegate(callbacks) }
+  val messageHandler = remember { IOSMessageHandler() }
+  val navigationDelegate = remember { IOSNavigationDelegate() }
+
+  // Ensure handler/delegate always see the latest callbacks across recompositions
+  SideEffect {
+    messageHandler.onScriptResult = callbacks.onScriptResult
+    navigationDelegate.callbacks = callbacks
+  }
 
   val webView = remember {
     val config = WKWebViewConfiguration()
@@ -44,14 +52,18 @@ internal actual fun WebViewImpl(
     }
   }
 
-  DisposableEffect(content) {
+  // Load content whenever it changes, but keep the bridge handler installed for the lifetime
+  // of the WKWebView (don’t remove it on every content update).
+  LaunchedEffect(content) {
+    webView.stopLoading()
+
     when (content) {
       is WebViewContent.Url -> {
         val nsUrl = NSURL.URLWithString(content.url)
         val request = NSURLRequest.requestWithURL(nsUrl!!)
 
-        // Note: WKWebView doesn't support custom headers in loadRequest
-        // For headers support, would need to use URLSession
+        // Note: WKWebView doesn't support custom headers in loadRequest.
+        // For headers support, we'd need to use URLSession + custom loading.
         webView.loadRequest(request)
       }
 
@@ -63,7 +75,10 @@ internal actual fun WebViewImpl(
         )
       }
     }
+  }
 
+  // Cleanup only when the composable leaves composition.
+  DisposableEffect(Unit) {
     onDispose {
       webView.configuration.userContentController.removeScriptMessageHandlerForName("iosBridge")
       webView.stopLoading()
@@ -78,8 +93,9 @@ internal actual fun WebViewImpl(
 
 @OptIn(ExperimentalForeignApi::class)
 private class IOSMessageHandler(
-  private val onScriptResult: ((String) -> Unit)?
 ) : NSObject(), WKScriptMessageHandlerProtocol {
+  var onScriptResult: ((String) -> Unit)? = null
+
   override fun userContentController(
     userContentController: WKUserContentController,
     didReceiveScriptMessage: WKScriptMessage
@@ -91,8 +107,9 @@ private class IOSMessageHandler(
 
 @OptIn(ExperimentalForeignApi::class)
 private class IOSNavigationDelegate(
-  private val callbacks: WebViewCallbacks
 ) : NSObject(), WKNavigationDelegateProtocol {
+  var callbacks: WebViewCallbacks = WebViewCallbacks.EMPTY
+
   @ObjCSignatureOverride
   override fun webView(webView: WKWebView, didStartProvisionalNavigation: WKNavigation?) {
     callbacks.onLoadStarted?.invoke()

@@ -7,8 +7,8 @@ A WebView component for Compose Multiplatform that works across Android, iOS, De
 - Load remote URLs or HTML content directly
 - JavaScript-to-Compose communication via message bridge
 - Loading state callbacks (started, finished, error)
-- Custom HTTP headers for URL requests
-- Consistent API across all platforms
+- Custom HTTP headers for URL requests (Android only)
+- Single API across all platforms (some capabilities are platform-dependent)
 
 ## Installation
 
@@ -32,6 +32,20 @@ Replace `VERSION` with the latest release version.
 | iOS | ✅ Supported | WKWebView (native) |
 | Desktop (JVM) | ✅ Supported | KCEF (Chromium Embedded Framework) |
 | Web (WASM) | ✅ Supported | WebElementView with iframe (requires CMP 1.9.0+) |
+
+## Capability matrix (quick truth table)
+
+| Capability | Android | iOS | Desktop (JVM) | Web (WASM) |
+|---|---:|---:|---:|---:|
+| Load remote `url` | ✅ | ✅ | ✅ | ✅ *(iframe; subject to CSP/X-Frame-Options)* |
+| Load `htmlContent` | ✅ | ✅ | ✅ | ✅ |
+| Custom request headers (`headers`) | ✅ | ❌ | ❌ | ❌ |
+| JS → Compose (`onScriptResult`) with `htmlContent` | ✅ | ✅ | ✅ | ✅ |
+| JS → Compose (`onScriptResult`) with remote `url` | ✅ *(bridge injected)* | ✅ *(bridge injected)* | ✅ *(bridge injected)* | ⚠️ *best-effort (no cross-origin injection)* |
+
+Notes:
+- On **Web/WASM**, browsers prevent injecting scripts into **cross-origin** iframes.
+- On native targets, bridge injection can still be affected by page security policies (e.g., strict CSP). Treat messaging as best-effort for arbitrary third-party pages.
 
 ### Platform-Specific Notes
 
@@ -86,9 +100,6 @@ The iOS implementation uses WKWebView, Apple's native web rendering engine.
 ### Loading a URL
 
 ```kotlin
-import io.github.aryapreetam.cmpwebview.WebView
-import androidx.compose.ui.Modifier
-
 WebView(
   url = "https://example.com",
   modifier = Modifier.fillMaxSize()
@@ -154,9 +165,13 @@ WebView(
 )
 ```
 
-The bridge automatically injects the necessary JavaScript into loaded pages, so you don't need to include any additional libraries in your web content.
+On Android/iOS/Desktop, the library injects the `ComposeWebViewBridge` script into loaded pages.
+
+On Web (WASM), the bridge is injected only when using `htmlContent` (via `iframe.srcdoc`). Browsers do not allow injecting scripts into cross-origin iframes, so JavaScript messaging for arbitrary remote URLs on WASM is **best-effort** and typically requires pages you control.
 
 ## Custom Headers
+
+**Note:** Custom headers are currently supported on **Android only**.
 
 Load URLs with custom HTTP headers (useful for authentication):
 
@@ -175,8 +190,6 @@ WebView(
 You can load HTML files bundled with your app using Compose Resources:
 
 ```kotlin
-import org.jetbrains.compose.resources.ExperimentalResourceApi
-
 @OptIn(ExperimentalResourceApi::class)
 @Composable
 fun MyScreen() {
