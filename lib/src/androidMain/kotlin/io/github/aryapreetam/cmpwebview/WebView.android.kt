@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.webkit.JavascriptInterface
 import android.webkit.WebView as AndroidWebView
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
@@ -17,24 +18,91 @@ import com.kevinnzou.web.rememberWebViewNavigator
 import com.kevinnzou.web.rememberWebViewState
 import com.kevinnzou.web.rememberWebViewStateWithHTMLData
 import io.github.aryapreetam.cmpwebview.internal.constants.BRIDGE_SCRIPT
+import io.github.aryapreetam.cmpwebview.internal.bridge.resolveBridgeEnablement
 import io.github.aryapreetam.cmpwebview.internal.bridge.unwrapBridgeMessage
 import io.github.aryapreetam.cmpwebview.internal.models.WebViewCallbacks
 import io.github.aryapreetam.cmpwebview.internal.models.WebViewContent
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
 
 @Composable
 internal actual fun WebViewImpl(
   content: WebViewContent,
   callbacks: WebViewCallbacks,
-  modifier: Modifier
+  modifier: Modifier,
+  options: WebViewOptions,
+  controller: WebViewController?
 ) {
   val messageBridge = remember { AndroidBridge() }
   var webViewInstance by remember { mutableStateOf<AndroidWebView?>(null) }
+
+  val bridgeEnablement = remember(options, callbacks.onScriptResult, controller) {
+    resolveBridgeEnablement(options, callbacks, controller)
+  }
+  val jsToComposeEnabled = bridgeEnablement.jsToCompose
+
+  DisposableEffect(controller, webViewInstance) {
+    val impl = controller as? WebViewControllerImpl
+    val webView = webViewInstance
+
+    if (impl != null && webView != null) {
+      impl.attach(
+        WebViewControllerImpl.Bindings(
+          evaluateJavaScript = { script ->
+            suspendCancellableCoroutine { continuation ->
+              try {
+                // Ensure call happens on the WebView thread.
+                webView.post {
+                  try {
+                    webView.evaluateJavascript(script) { rawResult ->
+                      if (continuation.isActive) {
+                        continuation.resume(WebViewJsResult.Success(rawResult))
+                      }
+                    }
+                  } catch (t: Throwable) {
+                    if (continuation.isActive) {
+                      continuation.resume(WebViewJsResult.Error("evaluateJavaScript failed", t))
+                    }
+                  }
+                }
+              } catch (t: Throwable) {
+                if (continuation.isActive) {
+                  continuation.resume(WebViewJsResult.Error("evaluateJavaScript failed", t))
+                }
+              }
+            }
+          },
+          reload = { webView.reload() },
+          goBack = {
+            if (webView.canGoBack()) {
+              webView.goBack()
+              true
+            } else {
+              false
+            }
+          },
+          goForward = {
+            if (webView.canGoForward()) {
+              webView.goForward()
+              true
+            } else {
+              false
+            }
+          }
+        )
+      )
+    }
+
+    onDispose {
+      impl?.detach()
+    }
+  }
 
   SideEffect {
     messageBridge.onScriptResult = callbacks.onScriptResult
   }
 
-  val bridgeEnabled = callbacks.onScriptResult != null
+  val bridgeEnabled = jsToComposeEnabled
 
   // Create appropriate WebView state based on content type
   val webViewState = when (content) {

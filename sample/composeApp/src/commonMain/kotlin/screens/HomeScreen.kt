@@ -118,6 +118,11 @@ sealed class DemoScreen(
   object UrlLoading : DemoScreen("URL Loading", "Load remote web content", "url-loading")
   object HtmlLoading : DemoScreen("HTML Loading", "Display HTML content", "html-loading")
   object BridgeDemo : DemoScreen("JavaScript Bridge", "JS-Compose communication", "bridge")
+  object ComposeToJsBridgeTest : DemoScreen(
+    "Compose→JS Bridge (Basic)",
+    "Call JavaScript from Compose using WebViewController",
+    "compose-to-js"
+  )
   object ErrorHandling : DemoScreen("Error Handling", "Handle loading errors", "error-handling")
   object ContentSwitching : DemoScreen("Content Switching", "Switch between URL and HTML", "content-switch")
   object CustomHeaders : DemoScreen("Custom Headers", "Load with authentication headers", "custom-headers")
@@ -126,7 +131,7 @@ sealed class DemoScreen(
 
   companion object {
     val coreScreens = listOf(UrlLoading, HtmlLoading, BridgeDemo, ErrorHandling)
-    val advancedScreens = listOf(ContentSwitching, CustomHeaders, MultiWebView, LoadingState)
+    val advancedScreens = listOf(ComposeToJsBridgeTest, ContentSwitching, CustomHeaders, MultiWebView, LoadingState)
     val allScreens = coreScreens + advancedScreens
   }
 }

@@ -16,6 +16,7 @@ android-documentation-plugin = { module = "org.jetbrains.dokka:android-documenta
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 androidx-activityCompose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activityCompose" }
 compose-webview = { module = "io.github.kevinnzou:compose-webview", version.ref = "compose-webview" }
+kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-swing = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines" }
 kcef = { module = "dev.datlag:kcef", version.ref = "kcef" }
 

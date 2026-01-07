@@ -35,6 +35,7 @@ kotlin {
 
     commonTest.dependencies {
       implementation(kotlin("test"))
+      implementation(libs.kotlinx.coroutines.core)
     }
     androidMain.dependencies {
       implementation(libs.compose.webview)
@@ -42,6 +43,10 @@ kotlin {
     jvmMain.dependencies {
       implementation(libs.kcef)
       implementation(libs.kotlinx.coroutines.swing)
+    }
+
+    jvmTest.dependencies {
+      implementation(kotlin("test"))
     }
   }
 

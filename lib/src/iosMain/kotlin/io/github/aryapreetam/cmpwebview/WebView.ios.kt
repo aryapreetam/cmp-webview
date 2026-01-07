@@ -7,10 +7,12 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.UIKitView
+import io.github.aryapreetam.cmpwebview.internal.bridge.resolveBridgeEnablement
 import io.github.aryapreetam.cmpwebview.internal.bridge.unwrapBridgeMessage
 import io.github.aryapreetam.cmpwebview.internal.constants.BRIDGE_SCRIPT
 import io.github.aryapreetam.cmpwebview.internal.models.WebViewCallbacks
 import io.github.aryapreetam.cmpwebview.internal.models.WebViewContent
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.ObjCSignatureOverride
 import kotlinx.cinterop.readValue
@@ -19,13 +21,16 @@ import platform.Foundation.NSURLRequest
 import platform.Foundation.NSURL
 import platform.WebKit.*
 import platform.darwin.NSObject
+import kotlin.coroutines.resume
 
 @OptIn(ExperimentalForeignApi::class)
 @Composable
 internal actual fun WebViewImpl(
   content: WebViewContent,
   callbacks: WebViewCallbacks,
-  modifier: Modifier
+  modifier: Modifier,
+  options: WebViewOptions,
+  controller: WebViewController?
 ) {
   val messageHandler = remember { IOSMessageHandler() }
   val navigationDelegate = remember { IOSNavigationDelegate() }
@@ -36,20 +41,98 @@ internal actual fun WebViewImpl(
     navigationDelegate.callbacks = callbacks
   }
 
+  val bridgeEnablement = remember(options, callbacks.onScriptResult, controller) {
+    resolveBridgeEnablement(options, callbacks, controller)
+  }
+  val jsToComposeEnabled = bridgeEnablement.jsToCompose
+
   val webView = remember {
     val config = WKWebViewConfiguration()
-
-    // Inject bridge script at document start
-    val userScript = WKUserScript(
-      source = BRIDGE_SCRIPT,
-      injectionTime = WKUserScriptInjectionTime.WKUserScriptInjectionTimeAtDocumentStart,
-      forMainFrameOnly = false
-    )
-    config.userContentController.addUserScript(userScript)
-    config.userContentController.addScriptMessageHandler(messageHandler, "iosBridge")
-
     WKWebView(frame = CGRectZero.readValue(), configuration = config).apply {
       setNavigationDelegate(navigationDelegate)
+    }
+  }
+
+  // Install/remove bridge only when actually used.
+  DisposableEffect(jsToComposeEnabled) {
+    val ucc = webView.configuration.userContentController
+
+    if (jsToComposeEnabled) {
+      val userScript = WKUserScript(
+        source = BRIDGE_SCRIPT,
+        injectionTime = WKUserScriptInjectionTime.WKUserScriptInjectionTimeAtDocumentStart,
+        forMainFrameOnly = false
+      )
+
+      // Ensure idempotent state.
+      ucc.removeAllUserScripts()
+      ucc.removeScriptMessageHandlerForName("iosBridge")
+
+      ucc.addUserScript(userScript)
+      ucc.addScriptMessageHandler(messageHandler, "iosBridge")
+
+      // Best-effort: inject into current document too.
+      webView.evaluateJavaScript(BRIDGE_SCRIPT, null)
+    } else {
+      ucc.removeAllUserScripts()
+      ucc.removeScriptMessageHandlerForName("iosBridge")
+    }
+
+    onDispose {
+      // No-op; state transitions handled above.
+    }
+  }
+
+  DisposableEffect(controller) {
+    val impl = controller as? WebViewControllerImpl
+    if (impl != null) {
+      impl.attach(
+        WebViewControllerImpl.Bindings(
+          evaluateJavaScript = { script ->
+            suspendCancellableCoroutine { continuation ->
+              webView.evaluateJavaScript(script) { result, error ->
+                if (!continuation.isActive) return@evaluateJavaScript
+
+                when {
+                  error != null -> {
+                    continuation.resume(WebViewJsResult.Error(error.localizedDescription, null))
+                  }
+                  result == null -> {
+                    continuation.resume(WebViewJsResult.Success(null))
+                  }
+                  result is String -> {
+                    continuation.resume(WebViewJsResult.Success(result))
+                  }
+                  else -> {
+                    continuation.resume(WebViewJsResult.Success(result.toString()))
+                  }
+                }
+              }
+            }
+          },
+          reload = { webView.reload() },
+          goBack = {
+            if (webView.canGoBack()) {
+              webView.goBack()
+              true
+            } else {
+              false
+            }
+          },
+          goForward = {
+            if (webView.canGoForward()) {
+              webView.goForward()
+              true
+            } else {
+              false
+            }
+          }
+        )
+      )
+    }
+
+    onDispose {
+      impl?.detach()
     }
   }
 
@@ -82,6 +165,7 @@ internal actual fun WebViewImpl(
   DisposableEffect(Unit) {
     onDispose {
       webView.configuration.userContentController.removeScriptMessageHandlerForName("iosBridge")
+      webView.configuration.userContentController.removeAllUserScripts()
       webView.stopLoading()
     }
   }

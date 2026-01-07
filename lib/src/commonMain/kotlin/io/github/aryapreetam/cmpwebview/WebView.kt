@@ -46,7 +46,9 @@ fun WebView(
   onScriptResult: ((String) -> Unit)? = null,
   onLoadStarted: (() -> Unit)? = null,
   onLoadFinished: (() -> Unit)? = null,
-  onLoadError: ((String) -> Unit)? = null
+  onLoadError: ((String) -> Unit)? = null,
+  options: WebViewOptions = WebViewOptions(),
+  controller: WebViewController? = null
 ) {
   var loadingState by remember { mutableStateOf("Idle") }
 
@@ -78,7 +80,7 @@ fun WebView(
       stateDescription = loadingState
     }
 
-  WebViewImpl(content, callbacks, modifierWithSemantics)
+  WebViewImpl(content, callbacks, modifierWithSemantics, options, controller)
 }
 
 /**
@@ -120,7 +122,9 @@ fun WebView(
   onScriptResult: ((String) -> Unit)? = null,
   onLoadStarted: (() -> Unit)? = null,
   onLoadFinished: (() -> Unit)? = null,
-  onLoadError: ((String) -> Unit)? = null
+  onLoadError: ((String) -> Unit)? = null,
+  options: WebViewOptions = WebViewOptions(),
+  controller: WebViewController? = null
 ) {
   var loadingState by remember { mutableStateOf("Idle") }
 
@@ -152,7 +156,7 @@ fun WebView(
       stateDescription = loadingState
     }
 
-  WebViewImpl(content, callbacks, modifierWithSemantics)
+  WebViewImpl(content, callbacks, modifierWithSemantics, options, controller)
 }
 
 /**
@@ -163,5 +167,7 @@ fun WebView(
 internal expect fun WebViewImpl(
   content: WebViewContent,
   callbacks: WebViewCallbacks,
-  modifier: Modifier
+  modifier: Modifier,
+  options: WebViewOptions,
+  controller: WebViewController?
 )

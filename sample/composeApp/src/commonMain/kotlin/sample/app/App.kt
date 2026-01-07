@@ -21,6 +21,7 @@ fun App() {
       DemoScreen.UrlLoading -> UrlLoadingScreen(onBack = { currentScreen = DemoScreen.Home })
       DemoScreen.HtmlLoading -> HtmlLoadingScreen(onBack = { currentScreen = DemoScreen.Home })
       DemoScreen.BridgeDemo -> BridgeDemoScreen(onBack = { currentScreen = DemoScreen.Home })
+      DemoScreen.ComposeToJsBridgeTest -> ComposeToJsBridgeTestScreen(onBack = { currentScreen = DemoScreen.Home })
       DemoScreen.ErrorHandling -> ErrorHandlingScreen(onBack = { currentScreen = DemoScreen.Home })
       DemoScreen.ContentSwitching -> ContentSwitchingScreen(onBack = { currentScreen = DemoScreen.Home })
       DemoScreen.CustomHeaders -> CustomHeadersScreen(onBack = { currentScreen = DemoScreen.Home })

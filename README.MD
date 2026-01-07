@@ -747,7 +747,9 @@ You can also run Gradle tasks in the terminal:
 
 ### Run Sample App by Platform
 
-- **Desktop JVM:** `./gradlew :sample:composeApp:run`
+- **Desktop JVM (recommended):** `./gradlew :sample:composeApp:jvmRun -DmainClass=MainKt`
+
+  **Note:** On Desktop, `:sample:composeApp:run` can get stuck at `CefApp INITIALIZING` depending on the Gradle JVM / JBR / JCEF wiring (especially when running via composite builds or different IDE run configs). If that happens, prefer `jvmRun` and ensure Gradle uses JetBrains Runtime (JBR) with JCEF.
 - **Android:** Open project in Android Studio and run the sample app
 - **iOS:** Open `sample/iosApp/iosApp.xcodeproj` in Xcode and run the sample app
 - **Wasm:** `./gradlew :sample:composeApp:wasmJsBrowserRun`
