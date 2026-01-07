@@ -39,6 +39,21 @@ To save compute resources and time, CI workflows use path-based filtering to onl
 
 ---
 
+## 🖥️ Desktop/JVM CI stability (KCEF/JCEF)
+
+The Desktop/JVM implementation uses KCEF/JCEF (Chromium). On CI runners this can require:
+
+1) **A virtual display** (Linux)
+   - JVM integration tests that render interop views via Swing/AWT need an X server.
+   - In CI, we run JVM tests under `xvfb-run`.
+
+2) **Caching the Chromium bundle**
+   - KCEF downloads a Chromium bundle on first run.
+   - The library config currently installs this under `~/kcef-bundle` (via `KCEF.init { installDir(...) }`).
+   - CI caches `~/kcef-bundle` to avoid repeated downloads and reduce flakiness.
+
+---
+
 ## 🏷️ Tagged Releases (release.yml)
 
 ### Always Runs Full CI - No Path Filtering

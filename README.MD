@@ -32,6 +32,7 @@ Android, iOS, Desktop (JVM), and Web (WASM) platforms with a unified API.
 - 🌐 Load remote URLs (custom headers: Android only)
 - 📄 Display HTML content directly
 - 🔗 JavaScript → Compose messaging (via `onScriptResult`)
+- 🔁 Compose → JavaScript calls (via `WebViewController.evaluateJavaScript`)
 - 🔒 Built-in security protections against dangerous URL schemes
 - ♿ Accessibility support with screen reader compatibility
 - 🧪 Testing support with test tags and semantics
@@ -46,11 +47,13 @@ Android, iOS, Desktop (JVM), and Web (WASM) platforms with a unified API.
 | Custom request headers (`headers`) | ✅ | ❌ | ❌ | ❌ |
 | JS → Compose (`onScriptResult`) with `htmlContent` | ✅ | ✅ | ✅ | ✅ |
 | JS → Compose (`onScriptResult`) with remote `url` | ✅ *(bridge injected)* | ✅ *(bridge injected)* | ✅ *(bridge injected)* | ⚠️ *best-effort (no cross-origin injection)* |
-| Compose → JS | ⏳ planned | ⏳ planned | ⏳ planned | ⏳ planned *(best-effort)* |
+| Compose → JS (`WebViewController.evaluateJavaScript`) | ✅ | ✅ | ✅ *(executes; no return values yet)* | ✅ *(same-origin / `htmlContent` only)* |
+| `evaluateJavaScript` **return values** | ✅ | ✅ | ❌ *(returns `Unsupported`)* | ✅ *(same-origin / `htmlContent` only)* |
 
 Notes:
 - On **Web/WASM**, browsers prevent injecting scripts into **cross-origin** iframes. For reliable messaging on WASM, prefer `htmlContent` or same-origin pages you control.
 - On native targets, bridge injection can still be affected by page security policies (e.g., strict CSP). Treat messaging as best-effort for arbitrary third-party pages.
+- On **Desktop/JVM**, JavaScript execution is best-effort, but `evaluateJavaScript` currently does **not** surface return values (it returns `WebViewJsResult.Unsupported(...)`).
 
 Wasm Demo:
 [![Try Live Demo](https://img.shields.io/badge/Try%20Live%20Demo-Web%20wasmJs-blueviolet?style=for-the-badge)](https://aryapreetam.github.io/cmp-webview/demo/)
@@ -182,6 +185,41 @@ fun BridgeExample() {
   )
 }
 ```
+
+### Compose → JavaScript (optional)
+
+If you need to call JavaScript from Compose, pass a `WebViewController`.
+
+```kotlin
+@Composable
+fun ComposeToJsExample() {
+  val controller = rememberWebViewController()
+  val scope = rememberCoroutineScope()
+
+  Column {
+    Button(onClick = {
+      scope.launch {
+        controller.evaluateJavaScript(
+          "document.body.style.background = 'tomato';" +
+            "window.ComposeWebViewBridge?.postMessage('ack');"
+        )
+      }
+    }) {
+      Text("Run JS")
+    }
+
+    WebView(
+      htmlContent = "<html><body>...</body></html>",
+      controller = controller,
+      onScriptResult = { msg -> println("JS→Compose: $msg") },
+    )
+  }
+}
+```
+
+Notes:
+- On **Desktop/JVM**, the script runs best-effort, but return values are not available yet.
+- On **Web/WASM**, calling JS only works reliably for `htmlContent` or same-origin content.
 
 ---
 
@@ -333,9 +371,27 @@ WebView(htmlContent = secureHtml)
 
 ## 🧪 Testing Guide
 
+### Interop testing limitations (important)
+
+`WebView` is an **interop** component on several targets:
+
+- **Android**: `AndroidView` ✅ testable via Android **instrumented** Compose UI tests
+- **iOS**: `UIKitView` ⚠️ `runComposeUiTest` currently fails for interop views (`LocalInteropContainer not provided`)
+- **Web/WASM**: `WebElementView` ⚠️ `runComposeUiTest` currently fails for interop views (`LocalInteropContainer not provided`)
+- **Desktop/JVM**: `SwingPanel` ⚠️ `runComposeUiTest` does not provide `LocalInteropContainer` for `SwingPanel`
+
+Practical strategy:
+
+- Prefer **Android instrumented tests** for true end-to-end WebView behavior.
+- On **Desktop/JVM**, use a Swing/ComposeWindow/ComposePanel-based integration harness (see the sample test at `sample/composeApp/src/jvmTest/.../WebViewBridgeIntegrationJvmTest.kt`).
+- For **iOS/WASM**, rely on manual QA for the interop surface + common/unit tests for shared bridge logic.
+
 ### UI Testing with Test Tags
 
 Use the `testTag` parameter to identify WebViews in tests:
+
+> Note: The snippet below assumes an Android-style Compose UI test rule. For Desktop interop views, use a
+> ComposePanel/ComposeWindow-based harness; for iOS/WASM, avoid `runComposeUiTest` for interop.
 
 ```kotlin
 // In your composable
@@ -488,9 +544,8 @@ WebView(
 
 ### Desktop (JVM)
 
-- Uses JavaFX WebView
-- **Known Limitation:** Can only be loaded once per application session due to JavaFX threading
-- See `specs/001-add-url-loading/desktop-webview-limitation.md` for details
+- Uses KCEF/JCEF (Chromium Embedded Framework)
+- **Known limitation:** `evaluateJavaScript` executes best-effort but does **not** return values yet (returns `WebViewJsResult.Unsupported(...)`).
 
 ### Web (WASM)
 

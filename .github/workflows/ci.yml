@@ -119,6 +119,24 @@ jobs:
           path: kotlin-js-store
           key: kjs-${{ runner.os }}-${{ hashFiles('**/*.gradle*', 'gradle/libs.versions.toml', '**/gradle-wrapper.properties') }}
           restore-keys: kjs-${{ runner.os }}-
+
+      # Desktop/JVM integration tests use Swing/AWT (via KCEF/JCEF) and need a display on Linux.
+      - name: Install Xvfb (Linux, JVM tests)
+        if: matrix.target == 'jvm'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+
+      # KCEF downloads a Chromium bundle on first run. Cache it so JVM tests are faster and less flaky.
+      - name: Cache KCEF bundle (Chromium)
+        if: matrix.target == 'jvm'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/kcef-bundle
+          key: kcef-bundle-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml', '**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            kcef-bundle-${{ runner.os }}-
       - name: Grant Gradlew execute permission
         run: chmod +x gradlew
       - name: Run library + sample target tests
@@ -127,7 +145,8 @@ jobs:
           set -e
           case "${{ matrix.target }}" in
             jvm)
-              ./gradlew :lib:jvmTest :sample:composeApp:jvmTest
+              xvfb-run --auto-servernum --server-args="-screen 0 1280x1024x24" \
+                ./gradlew :lib:jvmTest :sample:composeApp:jvmTest
               ;;
             ios)
               ./gradlew :lib:iosSimulatorArm64Test :sample:composeApp:iosSimulatorArm64Test

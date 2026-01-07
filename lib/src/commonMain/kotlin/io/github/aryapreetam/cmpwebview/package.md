@@ -20,10 +20,13 @@ Both functions share the same API across Android, iOS, Desktop, and Web platform
 | Custom request headers (`headers`) | ✅ | ❌ | ❌ | ❌ |
 | JS → Compose (`onScriptResult`) with `htmlContent` | ✅ | ✅ | ✅ | ✅ |
 | JS → Compose (`onScriptResult`) with remote `url` | ✅ *(bridge injected)* | ✅ *(bridge injected)* | ✅ *(bridge injected)* | ⚠️ *best-effort (no cross-origin injection)* |
+| Compose → JS (`WebViewController.evaluateJavaScript`) | ✅ | ✅ | ✅ *(executes; no return values yet)* | ✅ *(same-origin / `htmlContent` only)* |
+| `evaluateJavaScript` **return values** | ✅ | ✅ | ❌ *(returns `Unsupported`)* | ✅ *(same-origin / `htmlContent` only)* |
 
 Notes:
 - On **Web/WASM**, browsers prevent injecting scripts into **cross-origin** iframes.
 - Custom headers are currently supported on **Android only**.
+- On **Desktop/JVM**, `evaluateJavaScript` executes best-effort but does not return values yet.
 
 ## Basic Usage
 
@@ -125,6 +128,37 @@ document.addEventListener('ComposeWebViewBridgeReady', function() {
 });
 </script>
 ```
+
+### From Compose to JavaScript (optional)
+
+If you need to call JavaScript from Compose, pass a `WebViewController`.
+
+```kotlin
+@Composable
+fun ComposeToJsExample() {
+  val controller = rememberWebViewController()
+  val scope = rememberCoroutineScope()
+
+  Column {
+    Button(onClick = {
+      scope.launch {
+        controller.evaluateJavaScript("document.body.style.background = 'tomato';")
+      }
+    }) {
+      Text("Run JS")
+    }
+
+    WebView(
+      htmlContent = "<html><body>...</body></html>",
+      controller = controller,
+    )
+  }
+}
+```
+
+Notes:
+- On **Desktop/JVM**, scripts execute best-effort, but return values are not available yet.
+- On **Web/WASM**, calling JS is only supported for `htmlContent` or same-origin content.
 
 **In your Compose code:**
 ```kotlin

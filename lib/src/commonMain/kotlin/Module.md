@@ -5,7 +5,8 @@ A WebView component for Compose Multiplatform that works across Android, iOS, De
 ## Features
 
 - Load remote URLs or HTML content directly
-- JavaScript-to-Compose communication via message bridge
+- JavaScript → Compose communication via message bridge (`onScriptResult`)
+- Compose → JavaScript calls via `WebViewController.evaluateJavaScript` (best-effort; platform-dependent)
 - Loading state callbacks (started, finished, error)
 - Custom HTTP headers for URL requests (Android only)
 - Single API across all platforms (some capabilities are platform-dependent)
@@ -42,6 +43,8 @@ Replace `VERSION` with the latest release version.
 | Custom request headers (`headers`) | ✅ | ❌ | ❌ | ❌ |
 | JS → Compose (`onScriptResult`) with `htmlContent` | ✅ | ✅ | ✅ | ✅ |
 | JS → Compose (`onScriptResult`) with remote `url` | ✅ *(bridge injected)* | ✅ *(bridge injected)* | ✅ *(bridge injected)* | ⚠️ *best-effort (no cross-origin injection)* |
+| Compose → JS (`WebViewController.evaluateJavaScript`) | ✅ | ✅ | ✅ *(executes; no return values yet)* | ✅ *(same-origin / `htmlContent` only)* |
+| `evaluateJavaScript` **return values** | ✅ | ✅ | ❌ *(returns `Unsupported`)* | ✅ *(same-origin / `htmlContent` only)* |
 
 Notes:
 - On **Web/WASM**, browsers prevent injecting scripts into **cross-origin** iframes.
@@ -140,7 +143,10 @@ WebView(
 
 ## JavaScript Bridge
 
-The library provides one-way communication from JavaScript to Compose. Web pages can send messages to your Compose code using the `ComposeWebViewBridge` API.
+The library supports:
+
+- **JavaScript → Compose** via `onScriptResult` and the injected `ComposeWebViewBridge` API
+- **Compose → JavaScript** via `WebViewController.evaluateJavaScript` (optional)
 
 ### Sending Messages from JavaScript
 
@@ -168,6 +174,37 @@ WebView(
 On Android/iOS/Desktop, the library injects the `ComposeWebViewBridge` script into loaded pages.
 
 On Web (WASM), the bridge is injected only when using `htmlContent` (via `iframe.srcdoc`). Browsers do not allow injecting scripts into cross-origin iframes, so JavaScript messaging for arbitrary remote URLs on WASM is **best-effort** and typically requires pages you control.
+
+### Calling JavaScript from Compose (optional)
+
+To call JavaScript, create a controller and pass it into `WebView`:
+
+```kotlin
+@Composable
+fun ComposeToJsExample() {
+  val controller = rememberWebViewController()
+  val scope = rememberCoroutineScope()
+
+  Column {
+    Button(onClick = {
+      scope.launch {
+        controller.evaluateJavaScript("document.body.style.background = 'tomato';")
+      }
+    }) {
+      Text("Run JS")
+    }
+
+    WebView(
+      htmlContent = "<html><body>...</body></html>",
+      controller = controller,
+    )
+  }
+}
+```
+
+Notes:
+- On **Desktop/JVM**, scripts execute best-effort, but return values are not available yet.
+- On **Web/WASM**, calling JS is only supported for `htmlContent` or same-origin content.
 
 ## Custom Headers
 
