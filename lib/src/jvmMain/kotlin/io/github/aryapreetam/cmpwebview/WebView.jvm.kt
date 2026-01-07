@@ -544,23 +544,51 @@ private class BrowserResources {
  */
 internal class DesktopHtmlContentStore {
   private var tempHtmlFile: File? = null
-  private var lastSignature: Pair<Int, Int>? = null
+  private data class Signature(
+    val hash: Int,
+    val length: Int,
+    val baseUrl: String?,
+  )
 
-  fun urlForHtml(html: String): String {
-    val signature = html.hashCode() to html.length
-    val file = tempHtmlFile ?: File.createTempFile("cmpwebview-", ".html").also {
-      it.deleteOnExit()
-      tempHtmlFile = it
+  private var lastSignature: Signature? = null
+
+  fun urlForHtml(html: String, baseUrl: String?): String {
+    val processedHtml = if (baseUrl != null) {
+      injectBaseHrefIfMissing(html, baseUrl)
+    } else {
+      html
     }
 
-    if (lastSignature != signature) {
-      file.writeText(html, Charsets.UTF_8)
-      lastSignature = signature
+    val signature = Signature(
+      hash = processedHtml.hashCode(),
+      length = processedHtml.length,
+      baseUrl = baseUrl,
+    )
+
+    val existing = tempHtmlFile
+    val file = if (existing == null || lastSignature != signature) {
+      // IMPORTANT: do not rely on URL fragments to force reload.
+      // Navigations that only change `#fragment` often don't reload the document.
+      // Instead, create a new temp file when content changes so the URL path changes.
+      existing?.let {
+        try {
+          it.delete()
+        } catch (_: Exception) {
+          // ignore
+        }
+      }
+
+      File.createTempFile("cmpwebview-", ".html").also {
+        it.deleteOnExit()
+        it.writeText(processedHtml, Charsets.UTF_8)
+        tempHtmlFile = it
+        lastSignature = signature
+      }
+    } else {
+      existing
     }
 
-    // Use a fragment so the URL changes when content changes, while still pointing to the same file.
-    // This ensures callers that compare URLs (e.g., to avoid redundant navigations) will still reload.
-    return file.toURI().toString() + "#" + signature.first + "_" + signature.second
+    return file.toURI().toString()
   }
 
   fun cleanup() {
@@ -576,6 +604,31 @@ internal class DesktopHtmlContentStore {
   }
 }
 
+private fun injectBaseHrefIfMissing(html: String, baseUrl: String): String {
+  // If caller already provided a base tag, don't add another.
+  if (Regex("<\\s*base\\b", RegexOption.IGNORE_CASE).containsMatchIn(html)) return html
+
+  // Basic attribute escaping.
+  val safeBaseUrl = baseUrl.replace("\"", "&quot;")
+  val baseTag = "<base href=\"$safeBaseUrl\">"
+
+  // Prefer inserting inside <head>.
+  val headOpen = Regex("<\\s*head\\b[^>]*>", RegexOption.IGNORE_CASE)
+  val match = headOpen.find(html)
+  if (match != null) {
+    val insertAt = match.range.last + 1
+    return buildString(html.length + baseTag.length + 1) {
+      append(html, 0, insertAt)
+      append('\n')
+      append(baseTag)
+      append(html, insertAt, html.length)
+    }
+  }
+
+  // No <head> tag found; prepend a minimal head.
+  return "<head>\n$baseTag\n</head>\n$html"
+}
+
 private fun contentToDesktopUrl(content: WebViewContent, resources: BrowserResources): String {
   return when (content) {
     is WebViewContent.Url -> {
@@ -583,7 +636,7 @@ private fun contentToDesktopUrl(content: WebViewContent, resources: BrowserResou
       resources.htmlContentStore.cleanup()
       content.url
     }
-    is WebViewContent.Html -> resources.htmlContentStore.urlForHtml(content.htmlContent)
+    is WebViewContent.Html -> resources.htmlContentStore.urlForHtml(content.htmlContent, content.baseUrl)
   }
 }
 
