@@ -24,6 +24,9 @@ import org.cef.callback.CefQueryCallback
 import org.cef.handler.CefLoadHandlerAdapter
 import org.cef.handler.CefMessageRouterHandlerAdapter
 import org.cef.network.CefRequest
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlinx.coroutines.suspendCancellableCoroutine
 import java.awt.BorderLayout
 import java.awt.event.HierarchyEvent
 import java.awt.event.HierarchyListener
@@ -32,6 +35,21 @@ import java.util.*
 import javax.swing.JPanel
 import javax.swing.SwingUtilities
 import javax.swing.Timer
+
+private suspend fun <T> runOnSwingEdt(block: () -> T): T {
+  if (SwingUtilities.isEventDispatchThread()) return block()
+
+  return suspendCancellableCoroutine { continuation ->
+    SwingUtilities.invokeLater {
+      if (!continuation.isActive) return@invokeLater
+      try {
+        continuation.resume(block())
+      } catch (t: Throwable) {
+        continuation.resumeWithException(t)
+      }
+    }
+  }
+}
 
 // Global KCEF state - initialized once per application
 private object KCEFState {
@@ -182,8 +200,10 @@ internal actual fun WebViewImpl(
                 evaluateJavaScript = { script ->
                   try {
                     // Best-effort: CEF doesn't expose a simple return-value callback for JS evaluation.
-                    val scriptUrl = browser.url ?: "about:blank"
-                    browser.executeJavaScript(script, scriptUrl, 0)
+                    runOnSwingEdt {
+                      val scriptUrl = browser.url ?: "about:blank"
+                      browser.executeJavaScript(script, scriptUrl, 0)
+                    }
                     WebViewJsResult.Unsupported(
                       "Desktop evaluateJavaScript return values are not supported yet (no callback channel wired). Script was executed best-effort."
                     )
@@ -191,22 +211,16 @@ internal actual fun WebViewImpl(
                     WebViewJsResult.Error("evaluateJavaScript failed", t)
                   }
                 },
-                reload = { browser.reload() },
+                reload = { SwingUtilities.invokeLater { browser.reload() } },
                 goBack = {
-                  if (browser.canGoBack()) {
-                    browser.goBack()
-                    true
-                  } else {
-                    false
-                  }
+                  if (!browser.canGoBack()) return@Bindings false
+                  SwingUtilities.invokeLater { browser.goBack() }
+                  true
                 },
                 goForward = {
-                  if (browser.canGoForward()) {
-                    browser.goForward()
-                    true
-                  } else {
-                    false
-                  }
+                  if (!browser.canGoForward()) return@Bindings false
+                  SwingUtilities.invokeLater { browser.goForward() }
+                  true
                 }
               )
             )

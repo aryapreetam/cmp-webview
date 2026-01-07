@@ -71,43 +71,6 @@ fun ComposeToJsBridgeTestScreen(onBack: () -> Unit = {}) {
 
           Spacer(modifier = Modifier.height(12.dp))
 
-          Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-          ) {
-            Button(
-              modifier = Modifier.weight(1f),
-              enabled = pageLoaded,
-              onClick = {
-                scope.launch {
-                  lastEval = "Running…"
-                  lastEval = formatEvalResult(
-                    controller.evaluateJavaScript(
-                      "document.title = 'Title set by Compose'; document.title"
-                    )
-                  )
-                }
-              }
-            ) {
-              Text("Set title")
-            }
-
-            Button(
-              modifier = Modifier.weight(1f),
-              enabled = pageLoaded,
-              onClick = {
-                scope.launch {
-                  lastEval = "Running…"
-                  lastEval = formatEvalResult(controller.evaluateJavaScript("document.title"))
-                }
-              }
-            ) {
-              Text("Get title")
-            }
-          }
-
-          Spacer(modifier = Modifier.height(8.dp))
-
           Button(
             modifier = Modifier.fillMaxWidth(),
             enabled = pageLoaded,
@@ -116,13 +79,19 @@ fun ComposeToJsBridgeTestScreen(onBack: () -> Unit = {}) {
                 lastEval = "Running…"
                 lastEval = formatEvalResult(
                   controller.evaluateJavaScript(
-                    "(() => { const el = document.getElementById('box'); if (!el) return 'box-missing'; el.style.background = 'tomato'; return 'ok'; })()"
+                    "(() => {\n" +
+                      "  const box = document.getElementById('box');\n" +
+                      "  if (box) box.style.background = 'tomato';\n" +
+                      "  const status = document.getElementById('status');\n" +
+                      "  if (status) status.textContent = 'Updated from Compose at ' + new Date().toISOString();\n" +
+                      "  return 'ok';\n" +
+                      "})()"
                   )
                 )
               }
             }
           ) {
-            Text("Change box color")
+            Text("Run JS action")
           }
 
           if (!pageLoaded) {
@@ -159,7 +128,7 @@ fun ComposeToJsBridgeTestScreen(onBack: () -> Unit = {}) {
 private fun formatEvalResult(result: WebViewJsResult): String {
   return when (result) {
     is WebViewJsResult.Success -> "Success(${result.rawJsonOrString})"
-    is WebViewJsResult.Unsupported -> "Unsupported(${result.reason})"
+    is WebViewJsResult.Unsupported -> "Executed (no return on this platform): ${result.reason}"
     is WebViewJsResult.Error -> "Error(${result.message})"
   }
 }
@@ -168,8 +137,8 @@ private val composeToJsHtml: String = """
 <!DOCTYPE html>
 <html>
   <head>
-    <meta charset=\"UTF-8\" />
-    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Compose→JS Demo</title>
     <style>
       body { font-family: sans-serif; padding: 16px; }
@@ -178,7 +147,8 @@ private val composeToJsHtml: String = """
   </head>
   <body>
     <h3>Compose→JS demo page</h3>
-    <div id=\"box\"></div>
+    <div id="box"></div>
+    <p id="status">Status: waiting for Compose…</p>
     <p>This page is controlled by Compose calling JavaScript.</p>
   </body>
 </html>
