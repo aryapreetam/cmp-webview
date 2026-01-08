@@ -127,6 +127,33 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y xvfb
 
+      # Compose Desktop / Skiko tests can crash on Ubuntu runners if common GUI/GL deps are missing.
+      # Install a baseline set of libraries typically required by Chromium/Skia.
+      - name: Install Linux desktop deps (Linux, JVM tests)
+        if: matrix.target == 'jvm'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libasound2t64 \
+            libatk-bridge2.0-0 \
+            libatk1.0-0 \
+            libcups2 \
+            libdbus-1-3 \
+            libdrm2 \
+            libgbm1 \
+            libglib2.0-0 \
+            libgtk-3-0 \
+            libnss3 \
+            libx11-6 \
+            libxcomposite1 \
+            libxdamage1 \
+            libxfixes3 \
+            libxkbcommon0 \
+            libxrandr2 \
+            libxshmfence1 \
+            libxss1 \
+            mesa-utils
+
       # KCEF downloads a Chromium bundle on first run. Cache it so JVM tests are faster and less flaky.
       - name: Cache KCEF bundle (Chromium)
         if: matrix.target == 'jvm'
@@ -146,7 +173,10 @@ jobs:
           case "${{ matrix.target }}" in
             jvm)
               xvfb-run --auto-servernum --server-args="-screen 0 1280x1024x24" \
-                ./gradlew :lib:jvmTest :sample:composeApp:jvmTest
+                env \
+                  LIBGL_ALWAYS_SOFTWARE=1 \
+                  SKIKO_RENDER_API=SOFTWARE \
+                  ./gradlew :lib:jvmTest :sample:composeApp:jvmTest --stacktrace
               ;;
             ios)
               ./gradlew :lib:iosSimulatorArm64Test :sample:composeApp:iosSimulatorArm64Test
@@ -155,6 +185,17 @@ jobs:
               ./gradlew :lib:wasmJsBrowserTest :sample:composeApp:wasmJsBrowserTest
               ;;
           esac
+
+      - name: Upload JVM test reports (on failure)
+        if: failure() && matrix.target == 'jvm'
+        uses: actions/upload-artifact@v4
+        with:
+          name: jvm-test-reports
+          path: |
+            lib/build/reports/tests
+            sample/composeApp/build/reports/tests
+            **/hs_err_pid*.log
+          retention-days: 7
 
   test-android-unit:
     name: Android unit tests (lib + sample)
