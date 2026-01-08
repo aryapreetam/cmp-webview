@@ -177,7 +177,7 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
       - name: Run Android unit tests
-        run: ./gradlew :lib:testDebugUnitTest :sample:composeApp:testDebugUnitTest
+        run: ./gradlew :lib:testAndroidHostTest :sample:composeApp:testDebugUnitTest
 
   build-android-apk:
     name: Build Android APK for E2E

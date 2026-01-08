@@ -4,12 +4,12 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 
 class WebViewControllerImplTest {
 
   @Test
-  fun `evaluateJavaScript returns Unsupported when not attached`() = runBlocking {
+  fun `evaluateJavaScript returns Unsupported when not attached`() = runTest {
     val controller = WebViewControllerImpl()
 
     val result = controller.evaluateJavaScript("1 + 1")
@@ -18,7 +18,7 @@ class WebViewControllerImplTest {
   }
 
   @Test
-  fun `controller forwards calls to attached bindings`() = runBlocking {
+  fun `controller forwards calls to attached bindings`() = runTest {
     val controller = WebViewControllerImpl()
 
     var reloadCalled = false
@@ -53,7 +53,7 @@ class WebViewControllerImplTest {
   }
 
   @Test
-  fun `detach clears bindings`() = runBlocking {
+  fun `detach clears bindings`() = runTest {
     val controller = WebViewControllerImpl()
     controller.attach(
       WebViewControllerImpl.Bindings(
