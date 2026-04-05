@@ -10,7 +10,6 @@ plugins {
   alias(libs.plugins.compose.compiler)
   alias(libs.plugins.compose)
   alias(libs.plugins.android.application)
-  alias(libs.plugins.composeHotReload)
 }
 
 kotlin {
@@ -38,13 +37,13 @@ kotlin {
 
   sourceSets {
     commonMain.dependencies {
-      implementation(compose.runtime)
-      implementation(compose.ui)
-      implementation(compose.material3)
-      implementation(compose.foundation)
+      implementation(libs.compose.runtime)
+      implementation(libs.compose.ui.multiplatform)
+      implementation(libs.compose.material3)
+      implementation(libs.compose.foundation)
       implementation(project(":lib"))
       @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
-      implementation(compose.materialIconsExtended)
+      implementation(libs.compose.materialIconsExtended)
     }
 
     commonTest.dependencies {
@@ -53,7 +52,7 @@ kotlin {
 
     jvmTest.dependencies {
       @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
-      implementation(compose.uiTest)
+      implementation(libs.compose.ui.test)
     }
 
     androidMain.dependencies {
@@ -83,8 +82,8 @@ android {
 }
 
 dependencies {
-  androidTestImplementation("androidx.compose.ui:ui-test-junit4-android:1.9.0")
-  debugImplementation("androidx.compose.ui:ui-test-manifest:1.9.0")
+  androidTestImplementation(libs.ui.test.junit4)
+  debugImplementation(libs.ui.test.manifest)
 }
 
 compose.desktop {
