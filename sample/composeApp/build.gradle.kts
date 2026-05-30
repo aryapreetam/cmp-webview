@@ -105,4 +105,9 @@ tasks.withType<Test>().configureEach {
   if (name.endsWith("UnitTest")) {
     exclude("**/*UITest*")
   }
+
+  // Exclude the heavy, headless-unstable JCEF Swing integration test from CI
+  if (System.getenv("GITHUB_ACTIONS") == "true") {
+    exclude("**/WebViewBridgeIntegrationJvmTest*")
+  }
 }

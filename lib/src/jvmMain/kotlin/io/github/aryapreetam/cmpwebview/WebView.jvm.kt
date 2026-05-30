@@ -104,14 +104,6 @@ internal actual fun WebViewImpl(
   // Initialize KCEF once globally
   LaunchedEffect(Unit) {
     if (!KCEFState.initialized && KCEFState.initError == null) {
-      if (System.getProperty("cmpwebview.testmode") == "true") {
-        org.cef.CefApp.addAppHandler(object : org.cef.handler.CefAppHandlerAdapter(null) {
-          override fun onBeforeCommandLineProcessing(process_type: String?, command_line: org.cef.callback.CefCommandLine?) {
-            command_line?.appendArgument("--no-sandbox")
-            command_line?.appendArgument("--disable-gpu")
-          }
-        })
-      }
       withContext(Dispatchers.IO) {
         try {
           val bundleLocation = System.getProperty("compose.application.resources.dir")?.let { File(it) }
