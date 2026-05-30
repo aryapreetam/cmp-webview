@@ -39,18 +39,15 @@ To save compute resources and time, CI workflows use path-based filtering to onl
 
 ---
 
-## 🖥️ Desktop/JVM CI stability (KCEF/JCEF)
+## 🖥️ Desktop/JVM CI stability (Wry)
 
-The Desktop/JVM implementation uses KCEF/JCEF (Chromium). On CI runners this can require:
+The Desktop/JVM implementation uses Wry (native OS web engine via ComposeNativeWebview). CI setup is straightforward:
 
-1) **A virtual display** (Linux)
-   - JVM integration tests that render interop views via Swing/AWT need an X server.
-   - In CI, we run JVM tests under `xvfb-run`.
+1) **No Chromium download required** — Wry uses the OS-native web engine (WebKitGTK on Linux, WebKit on macOS, WebView2 on Windows). No large binary bundle to cache.
 
-2) **Caching the Chromium bundle**
-   - KCEF downloads a Chromium bundle on first run.
-   - The library config currently installs this under `~/kcef-bundle` (via `KCEF.init { installDir(...) }`).
-   - CI caches `~/kcef-bundle` to avoid repeated downloads and reduce flakiness.
+2) **Linux CI runners** may need WebKitGTK and a virtual display:
+   - Install `libwebkit2gtk-4.1-dev` (or equivalent) on the runner.
+   - JVM tests that render native views may still require `xvfb-run`.
 
 ---
 

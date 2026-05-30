@@ -1,9 +1,9 @@
-# ProGuard rules for KCEF (Kotlin Chromium Embedded Framework)
-# Required to prevent obfuscation of CEF classes and coroutines
+# ProGuard rules for Desktop WebView (Wry via ComposeNativeWebview)
+# Required to prevent obfuscation of JNA and native bridge classes
 
-# Keep all CEF classes
--keep class org.cef.** { *; }
+# Keep JNA native access classes used by Wry
+-keep class com.sun.jna.** { *; }
 
-# Keep kotlinx.coroutines.swing for KCEF initialization
+# Keep kotlinx.coroutines.swing for Compose Desktop dispatcher
 -keep class kotlinx.coroutines.swing.SwingDispatcherFactory
 

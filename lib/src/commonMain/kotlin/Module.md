@@ -31,7 +31,7 @@ Replace `VERSION` with the latest release version.
 |----------|--------|----------------|
 | Android (API 21+) | ✅ Supported | WebView via [compose-webview](https://github.com/KevinnZou/compose-webview) |
 | iOS | ✅ Supported | WKWebView (native) |
-| Desktop (JVM) | ✅ Supported | KCEF (Chromium Embedded Framework) |
+| Desktop (JVM) | ✅ Supported | Wry (native OS web engine via ComposeNativeWebview) |
 | Web (WASM) | ✅ Supported | WebElementView with iframe (requires CMP 1.9.0+) |
 
 ## Capability matrix (quick truth table)
@@ -70,15 +70,11 @@ Without this permission, the WebView will not be able to fetch network resources
 
 #### Desktop (JVM)
 
-The desktop implementation uses [KCEF by DatL4g](https://github.com/DatL4g/KCEF), which wraps the Chromium Embedded Framework.
+The desktop implementation uses [ComposeNativeWebview by kdroidFilter](https://github.com/kdroidFilter/ComposeNativeWebview), which leverages Wry (Rust) + UniFFI to use the native OS web engine (WebKit on macOS, WebKitGTK on Linux, WebView2 on Windows).
 
-**No manual setup required** - KCEF is automatically initialized by the library. On the first launch:
-- Chromium will be downloaded and set up (~100MB)
-- This happens automatically in the background
-- A progress indicator is shown during download
-- Subsequent launches are fast as Chromium is cached locally
+**No manual setup required** — the library uses the OS-native web engine, so there is no large binary download or bundling step. Desktop apps start immediately without any first-run initialization delay.
 
-**No JVM arguments, native libraries, or build configuration needed** - everything is handled automatically.
+**No JVM arguments, native libraries, or build configuration needed** — everything is handled automatically.
 
 #### Web (WASM)
 

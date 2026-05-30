@@ -544,9 +544,9 @@ WebView(
 
 ### Desktop (JVM)
 
-- Uses KCEF/JCEF (Chromium Embedded Framework)
-- **Known limitation:** `evaluateJavaScript` executes best-effort but does **not** return values yet (returns `WebViewJsResult.Unsupported(...)`).
-- **Shutdown:** runtime cleanup is handled automatically when the last desktop window closes.
+- Uses Wry (native OS web engine via ComposeNativeWebview)
+- No Chromium bundling — uses the platform's native web engine
+- Bridge communication via JS polyfill (`window.javaBridge` → `window.kmpJsBridge`)
 
 ### Web (WASM)
 
@@ -641,13 +641,12 @@ WebView(
 
 ### Desktop: IDE Unresponsive After App Exit
 
-**Problem:** After closing a Desktop app that uses KCEF/JCEF, the IDE or Gradle process may stay unresponsive.
+**Problem:** After closing a Desktop app, the IDE or Gradle process may stay unresponsive.
 
 **Solutions:**
 
-1. **Use a compatible runtime:** ensure Gradle uses JetBrains Runtime (JBR) with JCEF.
-2. **Avoid hot reload:** `hotRunDesktop` is not supported for KCEF/JCEF.
-3. **Let the runtime auto-clean up:** cmp-webview disposes KCEF when the last window closes.
+1. **Use a compatible runtime:** ensure Gradle uses JetBrains Runtime (JBR).
+2. **Let the runtime auto-clean up:** the library disposes native resources when the last desktop window closes.
 
 ### Memory Leaks
 
@@ -832,8 +831,7 @@ You can also run Gradle tasks in the terminal:
 
 - **Desktop JVM (recommended):** `./gradlew :sample:composeApp:jvmRun -DmainClass=MainKt`
 
-  **Note:** On Desktop, `:sample:composeApp:run` can get stuck at `CefApp INITIALIZING` depending on the Gradle JVM / JBR / JCEF wiring (especially when running via composite builds or different IDE run configs). If that happens, prefer `jvmRun` and ensure Gradle uses JetBrains Runtime (JBR) with JCEF.
-  **Hot reload note:** Compose hot reload (`hotRunDesktop`) is not supported for KCEF/JCEF and can keep CEF stuck in `INITIALIZING`.
+   **Note:** On Desktop, `:sample:composeApp:run` may sometimes hang depending on the Gradle JVM configuration. If that happens, prefer `jvmRun` and ensure Gradle uses JetBrains Runtime (JBR).
 - **Android:** Open project in Android Studio and run the sample app
 - **iOS:** Open `sample/iosApp/iosApp.xcodeproj` in Xcode and run the sample app
 - **Wasm:** `./gradlew :sample:composeApp:wasmJsBrowserRun`

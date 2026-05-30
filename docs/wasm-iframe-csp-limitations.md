@@ -48,7 +48,7 @@ Sites that commonly block iframe embedding include:
 |----------|---------------|-------------------------------|
 | **Android** | `WebView` (native) | ✅ Yes - native WebView ignores CSP for embedding |
 | **iOS** | `WKWebView` (native) | ✅ Yes - native WebView ignores CSP for embedding |
-| **Desktop (JVM)** | KCEF/CEF (native) | ✅ Yes - native WebView ignores CSP for embedding |
+| **Desktop (JVM)** | Wry (native) | ✅ Yes - native WebView ignores CSP for embedding |
 | **WASM (Web)** | `<iframe>` (browser) | ❌ No - browser enforces CSP strictly |
 
 **Key Insight:** This is not a bug in the library—it's a fundamental limitation of how browsers handle iframes. There is **no client-side JavaScript workaround** to bypass CSP `frame-ancestors` restrictions in a browser.

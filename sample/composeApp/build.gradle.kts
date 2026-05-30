@@ -67,15 +67,8 @@ compose.desktop {
   application {
     mainClass = "MainKt"
 
-    // Add JVM arguments required for KCEF and Wry
+    // JVM arguments required for Wry native webview (JNA access)
     jvmArgs("--enable-native-access=ALL-UNNAMED")
-    jvmArgs("--add-opens", "java.desktop/sun.awt=ALL-UNNAMED")
-    jvmArgs("--add-opens", "java.desktop/java.awt.peer=ALL-UNNAMED")
-
-    if (System.getProperty("os.name").contains("Mac")) {
-      jvmArgs("--add-opens", "java.desktop/sun.lwawt=ALL-UNNAMED")
-      jvmArgs("--add-opens", "java.desktop/sun.lwawt.macosx=ALL-UNNAMED")
-    }
 
     nativeDistributions {
       targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
@@ -96,20 +89,12 @@ tasks.withType<Test>().configureEach {
 
   jvmArgs("--enable-native-access=ALL-UNNAMED")
 
-  // Pass necessary opens parameters for JVM modular reflection in JCEF
-  jvmArgs("--add-opens", "java.desktop/sun.awt=ALL-UNNAMED")
-  jvmArgs("--add-opens", "java.desktop/java.awt.peer=ALL-UNNAMED")
-  if (System.getProperty("os.name").contains("Mac")) {
-    jvmArgs("--add-opens", "java.desktop/sun.lwawt=ALL-UNNAMED")
-    jvmArgs("--add-opens", "java.desktop/sun.lwawt.macosx=ALL-UNNAMED")
-  }
-
   // works for both testDebugUnitTest & testReleaseUnitTest
   if (name.endsWith("UnitTest")) {
     exclude("**/*UITest*")
   }
 
-  // Exclude the heavy, headless-unstable JCEF Swing integration test from CI
+  // Exclude the heavy, headless-unstable Swing integration test from CI
   if (System.getenv("GITHUB_ACTIONS") == "true") {
     exclude("**/WebViewBridgeIntegrationJvmTest*")
   }

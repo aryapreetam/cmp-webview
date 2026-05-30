@@ -157,13 +157,5 @@ tasks.withType<Test>().configureEach {
   systemProperty("cmpwebview.testmode", "true")
 
   jvmArgs("--enable-native-access=ALL-UNNAMED")
-
-  // Pass necessary opens parameters for JVM modular reflection in JCEF
-  jvmArgs("--add-opens", "java.desktop/sun.awt=ALL-UNNAMED")
-  jvmArgs("--add-opens", "java.desktop/java.awt.peer=ALL-UNNAMED")
-  if (System.getProperty("os.name").contains("Mac")) {
-    jvmArgs("--add-opens", "java.desktop/sun.lwawt=ALL-UNNAMED")
-    jvmArgs("--add-opens", "java.desktop/sun.lwawt.macosx=ALL-UNNAMED")
-  }
 }
 
