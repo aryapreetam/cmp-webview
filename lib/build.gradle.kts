@@ -4,7 +4,7 @@ import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
 plugins {
   alias(libs.plugins.multiplatform)
-  alias(libs.plugins.android.library)
+  alias(libs.plugins.android.kotlin.multiplatform.library)
   alias(libs.plugins.maven.publish)
   alias(libs.plugins.compose)
   alias(libs.plugins.compose.compiler)
@@ -14,11 +14,14 @@ plugins {
 kotlin {
   jvmToolchain(17)
 
-  android {
+  androidLibrary {
     namespace = "io.github.aryapreetam.cmpwebview"
     compileSdk = 35
-    minSdk = 21
+    minSdk = 23
     withHostTest {  }
+    androidResources {
+      enable = true
+    }
   }
   jvm()
   wasmJs { browser() }
@@ -59,6 +62,11 @@ kotlin {
     }
   }
 }
+
+// NOTE: Host-specific dependency leakage guardrail:
+// DO NOT import host-specific binary dependencies (e.g. `compose.desktop.currentOs`) under library targets.
+// Any desktop UI implementation should target standard platform-agnostic `jvm()` targets.
+// Platform-specific runtime locators must be restricted solely to the executable sample application (:sample).
 
 dependencies {
   dokkaPlugin(libs.android.documentation.plugin)
@@ -107,7 +115,11 @@ dokka {
 //https://www.jetbrains.com/help/kotlin-multiplatform-dev/multiplatform-publish-libraries.html
 mavenPublishing {
   publishToMavenCentral()
-  coordinates("io.github.aryapreetam", "cmp-webview", "0.0.1")
+  coordinates(
+      project.group.toString(),
+      findProperty("libArtifactId")?.toString() ?: "cmp-webview",
+      project.version.toString()
+  )
 
   pom {
     name = "Compose Multiplatform WebView"

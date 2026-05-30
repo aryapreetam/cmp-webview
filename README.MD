@@ -712,14 +712,15 @@ See `specs/001-add-url-loading/desktop-webview-limitation.md` for detailed expla
 
 Download and try the sample app on your platform without building from source:
 
-| Platform                     | Download Link                                                                                                                                                                                                     |
-|------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 🍏 **macOS (Intel)**         | [![Download](https://img.shields.io/badge/Download--Mac--x64--DMG-blue?style=for-the-badge)](https://github.com/aryapreetam/cmp-webview/releases/latest/download/sample-app-desktop-x64.dmg)                      |
-| 🍎 **macOS (Apple Silicon)** | [![Download](https://img.shields.io/badge/Download--Mac--arm64--DMG-blue?style=for-the-badge)](https://github.com/aryapreetam/cmp-webview/releases/latest/download/sample-app-desktop-arm64.dmg)                  |
-| 🪟 **Windows**               | [![Download](https://img.shields.io/badge/Download--Windows--MSI-0078D4?style=for-the-badge&logo=windows)](https://github.com/aryapreetam/cmp-webview/releases/latest/download/sample-app-windows.msi)            |
-| 🤖 **Android**               | [![Download](https://img.shields.io/badge/Download--Android--APK-green?style=for-the-badge&logo=android)](https://github.com/aryapreetam/cmp-webview/releases/latest/download/sample-app-android-unsigned.apk)    |
-| 🌐 **Web (Wasm)**            | [![Download](https://img.shields.io/badge/Download--Web--Wasm--zip-purple?style=for-the-badge)](https://github.com/aryapreetam/cmp-webview/releases/latest/download/sample-app-wasm.zip)                          |
-|  **iOS Simulator**          | [![Download](https://img.shields.io/badge/Download--iOS--Simulator--zip-orange?style=for-the-badge&logo=apple)](https://github.com/aryapreetam/cmp-webview/releases/latest/download/sample-app-ios-simulator.zip) |
+| Platform | Download Link |
+|----------|--------------|
+| 🍏 **macOS (Intel)** | [![Download](https://img.shields.io/badge/Download--Mac--x64--DMG-blue?style=for-the-badge)](https://github.com/aryapreetam/cmp-webview/releases/latest/download/sample-app-desktop-x64.dmg) |
+| 🍎 **macOS (Apple Silicon)** | [![Download](https://img.shields.io/badge/Download--Mac--arm64--DMG-blue?style=for-the-badge)](https://github.com/aryapreetam/cmp-webview/releases/latest/download/sample-app-desktop-arm64.dmg) |
+| 🪟 **Windows** | [![Download](https://img.shields.io/badge/Download--Windows--MSI-0078D4?style=for-the-badge&logo=windows)](https://github.com/aryapreetam/cmp-webview/releases/latest/download/sample-app-windows.msi) |
+| 🐧 **Linux** | [![Download](https://img.shields.io/badge/Download--Linux--DEB-E95420?style=for-the-badge&logo=ubuntu)](https://github.com/aryapreetam/cmp-webview/releases/latest/download/sample-app-linux.deb) |
+| 🤖 **Android** | [![Download](https://img.shields.io/badge/Download--Android--APK-green?style=for-the-badge&logo=android)](https://github.com/aryapreetam/cmp-webview/releases/latest/download/sample-app-android-unsigned.apk) |
+| 🌐 **Web (Wasm)** | [![Download](https://img.shields.io/badge/Download--Web--Wasm--zip-purple?style=for-the-badge)](https://github.com/aryapreetam/cmp-webview/releases/latest/download/sample-app-wasm.zip) |
+|  **iOS Simulator** | [![Download](https://img.shields.io/badge/Download--iOS--Simulator--zip-orange?style=for-the-badge&logo=apple)](https://github.com/aryapreetam/cmp-webview/releases/latest/download/sample-app-ios-simulator.zip) |
 
 ### How to Run the Sample App
 
@@ -742,8 +743,7 @@ adb install sample-app-android-unsigned.apk
 - Download and unzip `sample-app-wasm.zip`
 - Open `index.html` in a web browser
 
-**Note:** You can also try the live demo without
-downloading: [Try Live Demo](https://aryapreetam.github.io/cmp-webview/demo/)
+**Note:** You can also try the live demo without downloading: [Try Live Demo](https://aryapreetam.github.io/cmp-webview/demo/)
 
 #### 🍏 iOS Simulator
 
@@ -760,30 +760,46 @@ downloading: [Try Live Demo](https://aryapreetam.github.io/cmp-webview/demo/)
 
 - Download the DMG for your Mac architecture (Intel or Apple Silicon)
 - Open (mount) the DMG and drag the app to your Applications folder (or Desktop)
-- **When you try to open the app for the first time, you may see a Gatekeeper warning:**
+- **When you try to open the app for the first time, macOS Gatekeeper will block it since it is an open-source build signed ad-hoc (not using a paid Apple Developer account). Follow these 6 sequential steps to allow running the app:**
 
-  <p align="center">
-    <img src="readme_images/desktop_app_run.png" alt="Gatekeeper dialog" width="380" />
-    <br/>
-    <sub>Mac Gatekeeper dialog when opening the app for the first time</sub>
-  </p>
+  <table width="100%">
+    <tr>
+      <td align="center" valign="top"><strong>1. Block Alert Dialog</strong><br/><br/><img src="readme_images/mac_app_run1.png" alt="mac_app_run1" width="220"/></td>
+      <td align="center" valign="top"><strong>2. Open System Settings</strong><br/><br/><img src="readme_images/mac_app_run2.png" alt="mac_app_run2" width="220"/></td>
+      <td align="center" valign="top"><strong>3. Privacy & Security Section</strong><br/><br/><img src="readme_images/mac_app_run3.png" alt="mac_app_run3" width="220"/></td>
+    </tr>
+    <tr>
+      <td align="center" valign="top"><strong>4. Click "Open Anyway"</strong><br/><br/><img src="readme_images/mac_app_run4.png" alt="mac_app_run4" width="220"/></td>
+      <td align="center" valign="top"><strong>5. Authenticate Security Dialog</strong><br/><br/><img src="readme_images/mac_app_run5.png" alt="mac_app_run5" width="220"/></td>
+      <td align="center" valign="top"><strong>6. Click "Open" to Launch</strong><br/><br/><img src="readme_images/mac_app_run6.png" alt="mac_app_run6" width="220"/></td>
+    </tr>
+  </table>
 
 - To allow running the app:
-    1. **Right-click (control-click) the app and select "Open".**
-    2. In the dialog, click "Open". (If there is a question mark in the corner, you can click it for more info.)
-    3. The app will start. This is safe for open-source/test builds.
+     1. Double-click the app. If blocked, open macOS **System Settings** (or System Preferences).
+     2. Navigate to **Privacy & Security** and scroll down to the **Security** section.
+     3. You will see a notice stating: *"sample was blocked from use because it is not from an identified developer"*.
+     4. Click **"Open Anyway"** and authenticate with your user password or Touch ID.
+     5. Re-open the app and click **"Open"** on the confirmation dialog. The app will now launch safely!
 
-> This is a normal security step for all open-source and CI-generated Mac executables. Apps are signed ad-hoc for
-> internal/dev use, not with a public Apple developer ID.
+> This is a normal security step for all open-source and CI-generated Mac executables. Apps are signed ad-hoc for internal/dev use, not with a public Apple developer ID.
 
-**Tip:** Unsure about your Mac's type? Click the Apple logo → "About This Mac". If it says Intel, download x64; if it
-says M1, M2, or M3, download arm64.
+**Tip:** Unsure about your Mac's type? Click the Apple logo → "About This Mac". If it says Intel, download x64; if it says M1, M2, or M3, download arm64.
 
 #### 🪟 Windows
 
 - Download and run the MSI installer
 - Follow the installation wizard
 - Launch the app from the Start menu
+
+#### 🐧 Linux
+
+- Download the `.deb` file
+- Double-click the file to open it in your software manager and click "Install", OR run:
+  ```bash
+  sudo dpkg -i sample-app-linux.deb
+  ```
+- Launch the application from your desktop launcher or run `sample` in the terminal!
 
 ---
 

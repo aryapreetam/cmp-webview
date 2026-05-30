@@ -1,23 +1,22 @@
 @file:OptIn(ExperimentalWasmDsl::class)
 
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
-import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree
 
 plugins {
   alias(libs.plugins.multiplatform)
   alias(libs.plugins.compose.compiler)
   alias(libs.plugins.compose)
-  alias(libs.plugins.android.application)
+  alias(libs.plugins.android.kotlin.multiplatform.library)
 }
 
 kotlin {
   jvmToolchain(17)
 
-  androidTarget {
-    @OptIn(ExperimentalKotlinGradlePluginApi::class)
-    instrumentedTestVariant.sourceSetTree.set(KotlinSourceSetTree.test)
+  androidLibrary {
+    namespace = "sample.app"
+    compileSdk = 35
+    minSdk = 23
   }
   jvm()
   wasmJs {
@@ -42,7 +41,6 @@ kotlin {
       implementation(libs.compose.material3)
       implementation(libs.compose.foundation)
       implementation(project(":lib"))
-      @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
       implementation(libs.compose.materialIconsExtended)
     }
 
@@ -51,7 +49,6 @@ kotlin {
     }
 
     jvmTest.dependencies {
-      @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
       implementation(libs.compose.ui.test)
     }
 
@@ -64,26 +61,6 @@ kotlin {
       implementation("org.slf4j:slf4j-nop:2.0.13")
     }
   }
-}
-
-android {
-  namespace = "sample.app"
-  compileSdk = 35
-
-  defaultConfig {
-    minSdk = 21
-    targetSdk = 35
-
-    applicationId = "sample.app"
-    versionCode = 1
-    versionName = "1.0.0"
-    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-  }
-}
-
-dependencies {
-  androidTestImplementation(libs.ui.test.junit4)
-  debugImplementation(libs.ui.test.manifest)
 }
 
 compose.desktop {
