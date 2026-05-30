@@ -149,3 +149,17 @@ mavenPublishing {
     signAllPublications()
   }
 }
+
+tasks.withType<Test>().configureEach {
+  // Disable headless mode so Swing components function under xvfb-run
+  systemProperty("java.awt.headless", "false")
+  systemProperty("cmpwebview.testmode", "true")
+
+  // Pass necessary opens parameters for JVM modular reflection in JCEF
+  jvmArgs("--add-opens", "java.desktop/sun.awt=ALL-UNNAMED")
+  jvmArgs("--add-opens", "java.desktop/java.awt.peer=ALL-UNNAMED")
+  if (System.getProperty("os.name").contains("Mac")) {
+    jvmArgs("--add-opens", "java.desktop/sun.lwawt=ALL-UNNAMED")
+    jvmArgs("--add-opens", "java.desktop/sun.lwawt.macosx=ALL-UNNAMED")
+  }
+}
