@@ -2,6 +2,7 @@
 
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
+
 plugins {
   alias(libs.plugins.multiplatform)
   alias(libs.plugins.android.kotlin.multiplatform.library)
@@ -44,7 +45,7 @@ kotlin {
       implementation(libs.compose.webview)
     }
     jvmMain.dependencies {
-      implementation(libs.kcef)
+      implementation(libs.compose.native.webview)
       implementation(libs.kotlinx.coroutines.swing)
     }
 
@@ -155,6 +156,8 @@ tasks.withType<Test>().configureEach {
   systemProperty("java.awt.headless", "false")
   systemProperty("cmpwebview.testmode", "true")
 
+  jvmArgs("--enable-native-access=ALL-UNNAMED")
+
   // Pass necessary opens parameters for JVM modular reflection in JCEF
   jvmArgs("--add-opens", "java.desktop/sun.awt=ALL-UNNAMED")
   jvmArgs("--add-opens", "java.desktop/java.awt.peer=ALL-UNNAMED")
@@ -163,3 +166,4 @@ tasks.withType<Test>().configureEach {
     jvmArgs("--add-opens", "java.desktop/sun.lwawt.macosx=ALL-UNNAMED")
   }
 }
+

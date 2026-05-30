@@ -67,7 +67,8 @@ compose.desktop {
   application {
     mainClass = "MainKt"
 
-    // Add JVM arguments required for KCEF
+    // Add JVM arguments required for KCEF and Wry
+    jvmArgs("--enable-native-access=ALL-UNNAMED")
     jvmArgs("--add-opens", "java.desktop/sun.awt=ALL-UNNAMED")
     jvmArgs("--add-opens", "java.desktop/java.awt.peer=ALL-UNNAMED")
 
@@ -78,7 +79,7 @@ compose.desktop {
 
     nativeDistributions {
       targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-      packageName = "sample"
+      packageName = findProperty("libArtifactId")?.toString()?.let { "sample-$it" } ?: "sample"
       packageVersion = "1.0.0"
     }
 
@@ -92,6 +93,8 @@ tasks.withType<Test>().configureEach {
   // Disable headless mode so Swing components function under xvfb-run
   systemProperty("java.awt.headless", "false")
   systemProperty("cmpwebview.testmode", "true")
+
+  jvmArgs("--enable-native-access=ALL-UNNAMED")
 
   // Pass necessary opens parameters for JVM modular reflection in JCEF
   jvmArgs("--add-opens", "java.desktop/sun.awt=ALL-UNNAMED")

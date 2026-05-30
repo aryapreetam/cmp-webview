@@ -11,6 +11,7 @@ dokka = "2.2.0"
 compose-webview = "0.33.6"
 kotlinx-coroutines = "1.10.2"
 kcef = "2025.03.23"
+composewebview = "1.0.0-beta-02"
 
 [libraries]
 android-documentation-plugin = { module = "org.jetbrains.dokka:android-documentation-plugin", version.ref = "dokka" }
@@ -33,6 +34,7 @@ kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-cor
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-swing = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines" }
 kcef = { module = "dev.datlag:kcef", version.ref = "kcef" }
+compose-native-webview = { module = "io.github.kdroidfilter:composewebview", version.ref = "composewebview" }
 
 [plugins]
 
