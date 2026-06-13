@@ -24,7 +24,7 @@
   <img src="https://img.shields.io/badge/Web(wasm)-4285F4?logo=google-chrome&logoColor=white" alt="Web">
 </p>
 
-A comprehensive WebView library for Compose Multiplatform that enables you to display web content and HTML across
+A WebView library for Compose Multiplatform that enables you to display web content and HTML across
 Android, iOS, Desktop (JVM), and Web (WASM) platforms with a unified API.
 
 **Key Features:**
@@ -802,24 +802,6 @@ adb install sample-app-android-unsigned.apk
 
 ---
 
-## 🚀 What This Template Provides
-
-This template automatically generates and deploys three key resources for your library:
-
-| Resource                 | Description                                                      | Preview                                                                             |
-|--------------------------|------------------------------------------------------------------|-------------------------------------------------------------------------------------|
-| 📚 **Library Homepage**  | Your README becomes a beautiful landing page with Docsify        | <img src="readme_images/site-for-the-lib.png" alt="Library homepage" width="250" /> |
-| 📖 **API Documentation** | Automatically generated Dokka docs with improved UI (2.1.0-Beta) | <img src="readme_images/ste-for-api-doc.png" alt="API docs" width="250" />          |
-| 🌐 **Live Wasm Demo**    | Interactive browser demo of your sample app                      | <img src="readme_images/wasm-demo.png" alt="Wasm demo" width="250" />               |
-
-All three are automatically deployed to GitHub Pages:
-
-- **Homepage:** `https://<username>.github.io/<library-name>/`
-- **API Docs:** `https://<username>.github.io/<library-name>/api/`
-- **Demo:** `https://<username>.github.io/<library-name>/demo/`
-
----
-
 ## 🛠️ Run Sample App from Source
 
 You can also run Gradle tasks in the terminal:
@@ -874,8 +856,8 @@ Key points:
 
 ### Publish to MavenLocal
 
-1) Run `./gradlew :lib:publishToMavenLocal`
-2) Open `~/.m2/repository/cmp-webview/`
+1) Run `./gradlew :cmp-webview:publishToMavenLocal`
+2) Open `~/.m2/repository/io/github/aryapreetam/cmp-webview/`
 
 ### Publish to MavenCentral
 
@@ -902,7 +884,7 @@ But if you want to verify publishing from your local machine, you can follow bel
    # this will copy it for pasting in github actions secrets.
    gpg --export-secret-keys --armor <key id> | pbcopy
    ```
-5) Run `./gradlew :lib:publishAndReleaseToMavenCentral --no-configuration-cache`
+5) Run `./gradlew :cmp-webview:publishAndReleaseToMavenCentral --no-configuration-cache`
 
 ## License
 
@@ -912,7 +894,7 @@ MIT License © 2025 aryapreetam and contributors. See [LICENSE](./LICENSE) for d
 
 ## 🙏 Acknowledgments
 
-This template was built with inspiration and learnings from the excellent work of the Kotlin multiplatform community:
+This project was built with inspiration and learnings from the excellent work of the Kotlin multiplatform community:
 
 - **Project Setup:** Initial project structure was created
   using [Kotlin Multiplatform Web Wizard](https://terrakok.github.io/kmp-web-wizard/)
@@ -938,7 +920,7 @@ Special thanks to:
 
 ## 📋 TBD (To Be Done) - Future Enhancements
 
-This section lists planned improvements and features for the template. Contributions are welcome!
+This section lists planned improvements and features for the library. Contributions are welcome!
 
 ### 🔧 Code Quality & Tooling
 
@@ -1062,14 +1044,7 @@ This section lists planned improvements and features for the template. Contribut
     - Publish iOS framework to CocoaPods
     - Easier iOS integration
 
-### 🎨 Template Features
 
-- [ ] **Template Initialization Script**
-    - Interactive CLI to customize template
-    - Automated find/replace for package names
-    - Git history cleanup
-
----
 
 ### 💡 Have an Idea?
 

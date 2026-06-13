@@ -10,6 +10,7 @@ import androidx.compose.ui.unit.dp
 import io.github.aryapreetam.cmpwebview.WebView
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import sample.app.getYouTubeUrl
 
 /**
  * Demo screen for switching between URL and HTML content
@@ -120,10 +121,10 @@ fun ContentSwitchingScreen(onBack: () -> Unit) {
                   Text("Example", maxLines = 1)
                 }
                 OutlinedButton(
-                  onClick = { currentUrl = "https://github.com" },
+                  onClick = { currentUrl = getYouTubeUrl("kIEBQ_czdxs") },
                   modifier = Modifier.weight(1f)
                 ) {
-                  Text("GitHub", maxLines = 1)
+                  Text("YouTube", maxLines = 1)
                 }
               }
 

@@ -1,4 +1,4 @@
-rootProject.name = "cmp-webview"
+rootProject.name = "cmp-webview-root"
 
 pluginManagement {
   repositories {
@@ -37,7 +37,7 @@ plugins {
   id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
 }
 
-include(":lib")
+include(":cmp-webview")
 include(":sample:composeApp")
 include(":sample:androidApp")
 

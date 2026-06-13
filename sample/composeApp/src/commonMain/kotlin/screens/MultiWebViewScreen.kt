@@ -9,6 +9,7 @@ import androidx.compose.ui.unit.dp
 import io.github.aryapreetam.cmpwebview.WebView
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import sample.app.getYouTubeUrl
 
 /**
  * Demo screen showing multiple concurrent WebViews
@@ -96,8 +97,8 @@ fun MultiWebViewScreen(onBack: () -> Unit) {
               modifier = Modifier.weight(1f)
             )
             WebViewCard(
-              url = "https://github.com",
-              label = "GitHub",
+              url = getYouTubeUrl("kIEBQ_czdxs"),
+              label = "YouTube",
               testTag = "webview-2",
               modifier = Modifier.weight(1f)
             )
@@ -116,8 +117,8 @@ fun MultiWebViewScreen(onBack: () -> Unit) {
               modifier = Modifier.weight(1f)
             )
             WebViewCard(
-              url = "https://github.com",
-              label = "GitHub",
+              url = getYouTubeUrl("kIEBQ_czdxs"),
+              label = "YouTube",
               testTag = "webview-2",
               modifier = Modifier.weight(1f)
             )
@@ -140,8 +141,8 @@ fun MultiWebViewScreen(onBack: () -> Unit) {
                 modifier = Modifier.weight(1f)
               )
               WebViewCard(
-                url = "https://github.com",
-                label = "GitHub",
+                url = getYouTubeUrl("kIEBQ_czdxs"),
+                label = "YouTube",
                 testTag = "webview-2",
                 modifier = Modifier.weight(1f)
               )

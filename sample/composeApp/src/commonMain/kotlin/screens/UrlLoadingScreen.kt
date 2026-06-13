@@ -10,6 +10,7 @@ import androidx.compose.ui.unit.dp
 import io.github.aryapreetam.cmpwebview.WebView
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import sample.app.getYouTubeUrl
 
 /**
  * Demo screen for URL loading with different types of web content
@@ -65,9 +66,9 @@ fun UrlLoadingScreen(onBack: () -> Unit) {
               modifier = Modifier.weight(1f)
             ) { Text("HTML5 Test", maxLines = 1) }
             Button(
-              onClick = { currentUrl = "https://github.com" },
+              onClick = { currentUrl = getYouTubeUrl("kIEBQ_czdxs") },
               modifier = Modifier.weight(1f)
-            ) { Text("GitHub", maxLines = 1) }
+            ) { Text("YouTube", maxLines = 1) }
           }
 
           // Loading state indicator

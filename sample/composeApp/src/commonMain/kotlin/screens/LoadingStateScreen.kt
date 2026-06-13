@@ -11,6 +11,7 @@ import io.github.aryapreetam.cmpwebview.WebView
 import kotlinx.coroutines.launch
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import sample.app.getYouTubeUrl
 
 /**
  * Demo screen for different loading state patterns
@@ -63,10 +64,10 @@ fun LoadingStateScreen(onBack: () -> Unit) {
               Text("Example")
             }
             Button(
-              onClick = { currentUrl = "https://github.com" },
+              onClick = { currentUrl = getYouTubeUrl("kIEBQ_czdxs") },
               modifier = Modifier.weight(1f)
             ) {
-              Text("GitHub")
+              Text("YouTube")
             }
             Button(
               onClick = { currentUrl = "https://www.wikipedia.org" },

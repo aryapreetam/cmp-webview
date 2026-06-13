@@ -65,7 +65,7 @@ This is the standard browser behavior, and the library lets the browser handle i
 
 ## Implementation Details
 
-The WASM implementation (`lib/src/wasmJsMain/kotlin/io/github/aryapreetam/cmpwebview/WebView.wasmJs.kt`) uses:
+The WASM implementation (`cmp-webview/src/wasmJsMain/kotlin/io/github/aryapreetam/cmpwebview/WebView.wasmJs.kt`) uses:
 
 ```kotlin
 @OptIn(ExperimentalComposeUiApi::class)

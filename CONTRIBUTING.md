@@ -1,6 +1,6 @@
-# Contributing to Compose Multiplatform Library Template
+# Contributing to CMP WebView
 
-Thank you for your interest in contributing! This document provides guidelines for developers working on this template.
+Thank you for your interest in contributing! This document provides guidelines for developers working on this project.
 
 ---
 
@@ -12,7 +12,7 @@ cmp-webview/
 │   ├── ci.yml             # Reusable CI (lint, tests, build)
 │   ├── push-ci.yml        # Runs on every push/PR
 │   └── release.yml        # Runs on version tags (v*)
-├── lib/                   # The actual library code
+├── cmp-webview/           # The actual library code
 │   ├── src/
 │   │   ├── commonMain/    # Shared Kotlin code
 │   │   └── commonTest/    # Shared tests
@@ -55,10 +55,10 @@ cmp-webview/
    ./gradlew test
    
    # Platform-specific tests
-   ./gradlew :lib:jvmTest
-   ./gradlew :lib:iosSimulatorArm64Test
-   ./gradlew :lib:wasmJsBrowserTest
-   ./gradlew :lib:testDebugUnitTest  # Android unit tests
+   ./gradlew :cmp-webview:jvmTest
+   ./gradlew :cmp-webview:iosSimulatorArm64Test
+   ./gradlew :cmp-webview:wasmJsBrowserTest
+   ./gradlew :cmp-webview:testDebugUnitTest  # Android unit tests
    ```
 
 ---
@@ -67,15 +67,15 @@ cmp-webview/
 
 ### Working on the Library
 
-1. Make changes in `lib/src/commonMain/kotlin/`
-2. Write tests in `lib/src/commonTest/kotlin/`
-3. Run tests: `./gradlew :lib:test`
-4. Check code style: `./gradlew lintRelease`
+1. Make changes in `cmp-webview/src/commonMain/kotlin/`
+2. Write tests in `cmp-webview/src/commonTest/kotlin/`
+3. Run tests: `./gradlew :cmp-webview:test`
+4. Check code style: `./gradlew :cmp-webview:lintRelease`
 
 ### Testing Changes in Sample App
 
-1. Make changes in `lib/`
-2. The sample app automatically uses the local library via `implementation(project(":lib"))`
+1. Make changes in `cmp-webview/`
+2. The sample app automatically uses the local library via `implementation(project(":cmp-webview"))`
 3. Run the sample app on your target platform:
 
    **Android:**
@@ -106,7 +106,7 @@ cmp-webview/
 Test your library locally before publishing to Maven Central:
 
 ```bash
-./gradlew :lib:publishToMavenLocal
+./gradlew :cmp-webview:publishToMavenLocal
 ```
 
 Then in another project, add:
@@ -172,9 +172,9 @@ dependencies {
 
 ### Release Process
 
-1. **Update version in `lib/build.gradle.kts`**
+1. **Update version in `gradle.properties` or `cmp-webview/build.gradle.kts`**
    ```kotlin
-   coordinates("io.github.aryapreetam", "cmp-webview", "0.0.4") // Bump this
+   coordinates("io.github.aryapreetam", "cmp-webview", "0.0.4") // Bump this in your build file
    ```
 
 2. **Commit and push**
@@ -211,10 +211,10 @@ dependencies {
 ./gradlew test
 
 # Specific platforms
-./gradlew :lib:jvmTest
-./gradlew :lib:iosSimulatorArm64Test
-./gradlew :lib:wasmJsBrowserTest
-./gradlew :lib:testDebugUnitTest  # Android
+./gradlew :cmp-webview:jvmTest
+./gradlew :cmp-webview:iosSimulatorArm64Test
+./gradlew :cmp-webview:wasmJsBrowserTest
+./gradlew :cmp-webview:testDebugUnitTest  # Android
 ```
 
 ### UI Tests
@@ -236,7 +236,7 @@ dependencies {
 
 ### Adding a New Platform (e.g., tvOS)
 
-1. **Add target in `lib/build.gradle.kts`**
+1. **Add target in `cmp-webview/build.gradle.kts`**
    ```kotlin
    kotlin {
      // ...existing targets...
@@ -260,7 +260,7 @@ dependencies {
 
 4. **Test locally**
    ```bash
-   ./gradlew :lib:tvosSimulatorArm64Test
+   ./gradlew :cmp-webview:tvosSimulatorArm64Test
    ```
 
 ---
@@ -273,9 +273,9 @@ API documentation is generated automatically via Dokka:
 
 ```bash
 # Generate locally
-./gradlew :lib:dokkaGeneratePublicationHtml
+./gradlew :cmp-webview:dokkaGeneratePublicationHtml
 
-# View at: lib/build/dokka/html/index.html
+# View at: cmp-webview/build/dokka/html/index.html
 ```
 
 On release, docs are automatically published to: `https://yourusername.github.io/repo-name/api/`
@@ -290,7 +290,7 @@ Edit `README.MD` - it's automatically converted to the homepage via Docsify.
 
 ### Common Issues
 
-**Issue: "Task :lib:signKotlinMultiplatformPublication not found"**
+**Issue: "Task :cmp-webview:signKotlinMultiplatformPublication not found"**
 
 - Ensure GPG key is properly configured
 - Check `signing.keyId` is set (local) or `signingInMemoryKey` (CI)

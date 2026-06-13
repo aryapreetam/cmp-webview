@@ -176,13 +176,13 @@ jobs:
                 env \
                   LIBGL_ALWAYS_SOFTWARE=1 \
                   SKIKO_RENDER_API=SOFTWARE \
-                  ./gradlew :lib:jvmTest :sample:composeApp:jvmTest --stacktrace
+                  ./gradlew :cmp-webview:jvmTest :sample:composeApp:jvmTest --stacktrace
               ;;
             ios)
-              ./gradlew :lib:iosSimulatorArm64Test :sample:composeApp:iosSimulatorArm64Test
+              ./gradlew :cmp-webview:iosSimulatorArm64Test :sample:composeApp:iosSimulatorArm64Test
               ;;
             wasm)
-              ./gradlew :lib:wasmJsBrowserTest :sample:composeApp:wasmJsBrowserTest
+              ./gradlew :cmp-webview:wasmJsBrowserTest :sample:composeApp:wasmJsBrowserTest
               ;;
           esac
 
@@ -192,7 +192,7 @@ jobs:
         with:
           name: jvm-test-reports
           path: |
-            lib/build/reports/tests
+            cmp-webview/build/reports/tests
             sample/composeApp/build/reports/tests
             **/hs_err_pid*.log
           retention-days: 7
@@ -218,7 +218,7 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
       - name: Run Android unit tests
-        run: ./gradlew :lib:testAndroid :sample:androidApp:testDebugUnitTest
+        run: ./gradlew :cmp-webview:testAndroid :sample:androidApp:testDebugUnitTest
 
   build-android-apk:
     name: Build Android APK for E2E

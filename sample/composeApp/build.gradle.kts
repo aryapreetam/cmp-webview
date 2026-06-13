@@ -40,7 +40,7 @@ kotlin {
       implementation(libs.compose.ui.multiplatform)
       implementation(libs.compose.material3)
       implementation(libs.compose.foundation)
-      implementation(project(":lib"))
+      implementation(project(":cmp-webview"))
       implementation(libs.compose.materialIconsExtended)
     }
 
