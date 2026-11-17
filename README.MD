@@ -27,6 +27,8 @@
 A WebView library for Compose Multiplatform that enables you to display web content and HTML across
 Android, iOS, Desktop (JVM), and Web (WASM) platforms with a unified API.
 
+![cmp-webview demo](readme_images/cmp-webview-demo.gif)
+
 **Key Features:**
 
 - 🌐 Load remote URLs (custom headers: Android only)
@@ -73,7 +75,7 @@ Add the dependency to your Compose Multiplatform project:
 
 ```toml
 [versions]
-cmpWebview = "0.0.1"
+cmpWebview = "0.0.5"
 
 [libraries]
 cmp-webview = { module = "io.github.aryapreetam:cmp-webview", version.ref = "cmpWebview" }
@@ -100,7 +102,7 @@ kotlin {
   sourceSets {
     val commonMain by getting {
       dependencies {
-        implementation("io.github.aryapreetam:cmp-webview:0.0.1")
+        implementation("io.github.aryapreetam:cmp-webview:0.0.5")
       }
     }
   }

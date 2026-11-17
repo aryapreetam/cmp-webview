@@ -24,7 +24,7 @@ fun MultiWebViewScreen(onBack: () -> Unit) {
       TopAppBar(
         title = { Text("Multiple WebViews Demo") },
         navigationIcon = {
-          IconButton(onClick = onBack) {
+          IconButton(onClick = onBack, modifier = Modifier.testTag("back_button")) {
             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
           }
         }

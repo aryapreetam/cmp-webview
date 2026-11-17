@@ -23,7 +23,7 @@ fun HtmlLoadingScreen(onBack: () -> Unit) {
       TopAppBar(
         title = { Text("HTML Loading Demo") },
         navigationIcon = {
-          IconButton(onClick = onBack) {
+          IconButton(onClick = onBack, modifier = Modifier.testTag("back_button")) {
             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
           }
         }
@@ -54,7 +54,7 @@ fun HtmlLoadingScreen(onBack: () -> Unit) {
             HtmlDemo.values().forEach { demo ->
               Button(
                 onClick = { selectedDemo = demo },
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f).testTag("demo_tab_${demo.label}")
               ) {
                 Text(demo.label, maxLines = 1)
               }

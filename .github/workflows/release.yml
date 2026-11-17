@@ -28,7 +28,7 @@ jobs:
   # Build APK, Wasm, and DEB on Ubuntu in parallel after all tests (lib+sample) succeed
   build-linux:
     name: Build Android APK, Wasm, and Linux DEB (Ubuntu)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [ ci ]
     steps:
       - name: Checkout repository
@@ -74,7 +74,7 @@ jobs:
           node-version: '20'
       - name: Setup Android SDK
         if: steps.check-apk.outputs.exists == 'false'
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
       - name: Cache Kotlin JS Store
         uses: actions/cache@v4
         with:
@@ -278,7 +278,8 @@ jobs:
         run: |
           SIMULATOR_ID=$(xcrun simctl list devices available | grep -m1 -Eo '[A-F0-9-]{36}')
           if [ -z "$SIMULATOR_ID" ]; then echo "No available iOS Simulator found!"; exit 1; fi
-          xcodebuild -project sample/iosApp/iosApp.xcodeproj -scheme iosApp -destination "id=$SIMULATOR_ID" -configuration Release build
+          export GRADLE_OPTS="-Dorg.gradle.jvmargs=\"-Xmx6g -XX:+UseParallelGC\""
+          xcodebuild -project sample/iosApp/iosApp.xcodeproj -scheme iosApp -destination "id=$SIMULATOR_ID" -configuration Release ONLY_ACTIVE_ARCH=YES build
           XCODE_IOS_APP=$(find ~/Library/Developer/Xcode/DerivedData/ -type d -path '*/Build/Products/Release-iphonesimulator/*.app' | sort -r | head -n1)
           if [ -d "$XCODE_IOS_APP" ]; then
             APP_DIR=$(dirname "$XCODE_IOS_APP"); APP_NAME=$(basename "$XCODE_IOS_APP")
@@ -303,7 +304,7 @@ jobs:
 
   create-release:
     name: Create GitHub Release and upload assets
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [ build-linux, build-macos, build-windows, build-ios-sim ]
     steps:
       - name: Download Linux artifacts
@@ -387,7 +388,7 @@ jobs:
   # Single job to deploy homepage, demo, and API docs sequentially to avoid gh-pages ref lock
   deploy-pages:
     name: Deploy GitHub Pages (homepage, demo, api)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [ create-release ]
     permissions:
       pages: write
@@ -447,6 +448,13 @@ jobs:
             },
             plugins: [
               function(hook, vm) {
+                hook.afterEach(function(html, next) {
+                  var videoRegex = /<p><a href="(https:\/\/[^"]+\/user-attachments\/assets\/[^"]+)".*?<\/a><\/p>/g;
+                  var transformed = html.replace(videoRegex, function(match, url) {
+                    return '<video controls autoplay loop muted playsinline style="max-width: 100%; border-radius: 8px; margin: 16px 0;"><source src="' + url + '" type="video/mp4">Your browser does not support the video tag.</video>';
+                  });
+                  next(transformed);
+                });
                 hook.doneEach(function() {
                   mermaid.run({
                     querySelector: '.mermaid'

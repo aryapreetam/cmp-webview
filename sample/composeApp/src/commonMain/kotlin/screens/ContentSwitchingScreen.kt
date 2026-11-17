@@ -28,7 +28,7 @@ fun ContentSwitchingScreen(onBack: () -> Unit) {
       TopAppBar(
         title = { Text("Content Switching Demo") },
         navigationIcon = {
-          IconButton(onClick = onBack) {
+          IconButton(onClick = onBack, modifier = Modifier.testTag("back_button")) {
             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
           }
         }

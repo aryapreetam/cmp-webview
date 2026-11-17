@@ -8,6 +8,7 @@ plugins {
   alias(libs.plugins.compose.compiler)
   alias(libs.plugins.compose)
   alias(libs.plugins.android.kotlin.multiplatform.library)
+  alias(libs.plugins.parikshan)
 }
 
 kotlin {
@@ -16,7 +17,7 @@ kotlin {
   androidLibrary {
     namespace = "sample.app"
     compileSdk = 35
-    minSdk = 23
+    minSdk = 24
   }
   jvm()
   wasmJs {
@@ -58,9 +59,19 @@ kotlin {
 
     jvmMain.dependencies {
       implementation(compose.desktop.currentOs)
+      implementation(libs.kotlinx.coroutines.swing)
       implementation("org.slf4j:slf4j-nop:2.0.13")
     }
   }
+}
+
+configurations.matching { it.name == "jvmRuntimeClasspath" }.configureEach {
+  exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-test")
+  exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-test-jvm")
+  exclude(group = "org.jetbrains.compose.ui", module = "ui-test-junit4")
+  exclude(group = "org.jetbrains.compose.ui", module = "ui-test-junit4-desktop")
+  exclude(group = "org.jetbrains.compose.ui", module = "ui-test")
+  exclude(group = "org.jetbrains.compose.ui", module = "ui-test-desktop")
 }
 
 compose.desktop {

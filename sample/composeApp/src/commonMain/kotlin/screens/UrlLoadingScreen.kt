@@ -21,13 +21,14 @@ fun UrlLoadingScreen(onBack: () -> Unit) {
   var currentUrl by remember { mutableStateOf("https://example.com") }
   var isLoading by remember { mutableStateOf(false) }
   var loadError by remember { mutableStateOf<String?>(null) }
+  var loadStatus by remember { mutableStateOf("Idle") }
 
   Scaffold(
     topBar = {
       TopAppBar(
         title = { Text("URL Loading Demo") },
         navigationIcon = {
-          IconButton(onClick = onBack) {
+          IconButton(onClick = onBack, modifier = Modifier.testTag("back_button")) {
             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
           }
         }
@@ -58,18 +59,42 @@ fun UrlLoadingScreen(onBack: () -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(8.dp)
           ) {
             Button(
-              onClick = { currentUrl = "https://example.com" },
-              modifier = Modifier.weight(1f)
+              onClick = {
+                if (currentUrl != "https://example.com") {
+                  currentUrl = "https://example.com"
+                  loadStatus = "Loading"
+                }
+              },
+              modifier = Modifier.weight(1f).testTag("btn_example")
             ) { Text("Example", maxLines = 1) }
             Button(
-              onClick = { currentUrl = "https://html5test.com" },
-              modifier = Modifier.weight(1f)
+              onClick = {
+                if (currentUrl != "https://html5test.co") {
+                  currentUrl = "https://html5test.co"
+                  loadStatus = "Loading"
+                }
+              },
+              modifier = Modifier.weight(1f).testTag("btn_html5test")
             ) { Text("HTML5 Test", maxLines = 1) }
             Button(
-              onClick = { currentUrl = getYouTubeUrl("kIEBQ_czdxs") },
-              modifier = Modifier.weight(1f)
+              onClick = {
+                val target = getYouTubeUrl("kIEBQ_czdxs")
+                if (currentUrl != target) {
+                  currentUrl = target
+                  loadStatus = "Loading"
+                }
+              },
+              modifier = Modifier.weight(1f).testTag("btn_youtube")
             ) { Text("YouTube", maxLines = 1) }
           }
+
+          // Page status indicator
+          Spacer(modifier = Modifier.height(8.dp))
+          Text(
+            text = "Page Status: $loadStatus",
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.testTag("page_status_indicator")
+          )
 
           // Loading state indicator
           if (isLoading) {
@@ -107,14 +132,17 @@ fun UrlLoadingScreen(onBack: () -> Unit) {
           url = currentUrl,
           modifier = Modifier.fillMaxSize().testTag("url-loading-webview"),
           onLoadStarted = {
+            loadStatus = "Loading"
             isLoading = true
             loadError = null
           },
           onLoadFinished = {
+            loadStatus = "Loaded"
             isLoading = false
             loadError = null
           },
           onLoadError = { error ->
+            loadStatus = "Error: $error"
             isLoading = false
             loadError = error
           }

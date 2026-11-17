@@ -27,6 +27,4 @@ build.gradle.kts @aryapreetam
 settings.gradle.kts @aryapreetam
 gradle.properties @aryapreetam
 
-# Maestro E2E tests
-/maestro-e2e/ @aryapreetam
 

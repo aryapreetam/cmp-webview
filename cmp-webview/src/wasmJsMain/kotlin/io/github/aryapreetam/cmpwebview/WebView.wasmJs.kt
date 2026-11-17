@@ -3,6 +3,7 @@ package io.github.aryapreetam.cmpwebview
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
@@ -43,135 +44,7 @@ internal actual fun WebViewImpl(
   val jsToComposeEnabled = bridgeEnablement.jsToCompose
   val composeToJsEnabled = bridgeEnablement.composeToJs && options.bridgeMode != WebViewBridgeMode.Disabled
 
-  // Controller is best-effort and only fully supported for srcdoc (htmlContent). For cross-origin url iframes,
-  // JS evaluation is blocked by browser security boundaries.
-  val pendingEval = remember { mutableMapOf<String, (WebViewJsResult) -> Unit>() }
-  var evalSeq by remember { mutableStateOf(0) }
-
-  // Create the iframe once and let Compose manage its presence in the DOM
-  val iframe = remember {
-    (document.createElement("iframe") as HTMLIFrameElement).apply {
-      style.width = "100%"
-      style.height = "100%"
-      style.border = "none"
-    }
-  }
-
-  // Track only the current URL to avoid redundant loads
-  var currentUrl by remember { mutableStateOf<String?>(null) }
-
-  DisposableEffect(controller, composeToJsEnabled) {
-    val impl = controller as? WebViewControllerImpl
-    if (impl != null) {
-      impl.attach(
-        WebViewControllerImpl.Bindings(
-          evaluateJavaScript = { script ->
-            val isUrlLoad = currentUrl != null
-            if (!composeToJsEnabled) {
-              return@Bindings WebViewJsResult.Unsupported(
-                "WASM evaluateJavaScript is disabled by WebViewOptions.bridgeMode=Disabled"
-              )
-            }
-            if (isUrlLoad) {
-              return@Bindings WebViewJsResult.Unsupported(
-                "WASM evaluateJavaScript is best-effort and is not supported for url iframes (cross-origin isolation blocks evaluation)"
-              )
-            }
-
-            val targetWindow = iframe.contentWindow
-              ?: return@Bindings WebViewJsResult.Unsupported("WASM iframe is not ready")
-
-            suspendCancellableCoroutine { continuation ->
-              val id = (++evalSeq).toString()
-
-              pendingEval[id] = { result ->
-                if (continuation.isActive) {
-                  continuation.resume(result)
-                }
-              }
-              continuation.invokeOnCancellation {
-                pendingEval.remove(id)
-              }
-
-              val request = buildEvalRequest(id, script)
-              // srcdoc has an opaque origin; targetOrigin must be "*".
-              targetWindow.postMessage(request.toJsString(), "*")
-            }
-          },
-          reload = {
-            // Best-effort no-op for now; platform-specific evaluation/navigation is implemented in T032.
-          },
-          goBack = { false },
-          goForward = { false }
-        )
-      )
-    }
-
-    onDispose {
-      impl?.detach()
-    }
-  }
-
-  // Lifecycle: always attach load/error handlers; attach message handler only when bridge is enabled.
-  DisposableEffect(Unit) {
-    // Load finished callback
-    val loadHandler: (Event) -> Unit = {
-      latestCallbacks.onLoadFinished?.invoke()
-    }
-    iframe.addEventListener("load", loadHandler)
-
-    // Error handler
-    val errorHandler: (Event) -> Unit = {
-      latestCallbacks.onLoadError?.invoke("Failed to load content")
-    }
-    iframe.addEventListener("error", errorHandler)
-
-    onDispose {
-      iframe.removeEventListener("load", loadHandler)
-      iframe.removeEventListener("error", errorHandler)
-    }
-  }
-
-  if (jsToComposeEnabled || composeToJsEnabled) {
-    DisposableEffect(jsToComposeEnabled, composeToJsEnabled) {
-      val messageHandler: (Event) -> Unit = messageHandler@{ event ->
-        val messageEvent = event as? MessageEvent ?: return@messageHandler
-        val expectedSource = iframe.contentWindow
-        if (expectedSource == null || messageEvent.source != expectedSource) return@messageHandler
-
-        val raw = messageEvent.data?.toString() ?: "null"
-
-        if (jsToComposeEnabled) {
-          // JS→Compose bridge payloads (ignore internal eval messages).
-          val isEvalMessage = raw.startsWith(EVAL_REQUEST_PREFIX) ||
-            raw.startsWith(EVAL_RESULT_PREFIX) ||
-            raw.startsWith(EVAL_ERROR_PREFIX)
-          if (!isEvalMessage) {
-            latestCallbacks.onScriptResult?.invoke(unwrapBridgeMessage(raw))
-          }
-        }
-
-        if (composeToJsEnabled) {
-          val evalResult = parseEvalResponse(raw)
-          if (evalResult != null) {
-            val resume = pendingEval.remove(evalResult.id)
-            resume?.invoke(evalResult.result)
-          }
-        }
-      }
-      window.addEventListener("message", messageHandler)
-
-      onDispose {
-        window.removeEventListener("message", messageHandler)
-        if (!composeToJsEnabled) {
-          pendingEval.clear()
-        }
-      }
-    }
-  }
-
-  // Use LaunchedEffect to handle navigation when content changes
-  // Key on the actual URL/HTML string to prevent duplicate launches
+  // Content key uniquely identifying the content payload.
   val contentKey = remember(content) {
     when (content) {
       is WebViewContent.Url -> "url:${content.url}"
@@ -179,41 +52,176 @@ internal actual fun WebViewImpl(
     }
   }
 
-  LaunchedEffect(contentKey) {
-    when (content) {
-      is WebViewContent.Url -> {
-        val targetUrl = content.url
-        // Only navigate if URL actually changed (DOM-level guard)
-        if (currentUrl != targetUrl) {
-          currentUrl = targetUrl
-          // Attempt to set URL; will be a no-op if same as last
+  // Key the entire iframe instance and its listeners on contentKey.
+  // This ensures:
+  // 1. Each distinct content load gets a fresh DOM iframe and clean subframe renderer.
+  // 2. If an iframe crashes (e.g. OOPIF GPU stall or OOM), navigating to another URL
+  //    disposes the dead DOM node and instantiates a clean iframe element.
+  key(contentKey) {
+    // Controller is best-effort and only fully supported for srcdoc (htmlContent). For cross-origin url iframes,
+    // JS evaluation is blocked by browser security boundaries.
+    val pendingEval = remember { mutableMapOf<String, (WebViewJsResult) -> Unit>() }
+    var evalSeq by remember { mutableStateOf(0) }
+
+    val iframe = remember {
+      (document.createElement("iframe") as HTMLIFrameElement).apply {
+        style.width = "100%"
+        style.height = "100%"
+        style.border = "none"
+        setAttribute(
+          "allow",
+          "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        )
+        setAttribute("referrerpolicy", "strict-origin-when-cross-origin")
+        setAttribute("credentialless", "true")
+      }
+    }
+
+    DisposableEffect(controller, composeToJsEnabled) {
+      val impl = controller as? WebViewControllerImpl
+      if (impl != null) {
+        impl.attach(
+          WebViewControllerImpl.Bindings(
+            evaluateJavaScript = { script ->
+              val isUrlLoad = content is WebViewContent.Url
+              if (!composeToJsEnabled) {
+                return@Bindings WebViewJsResult.Unsupported(
+                  "WASM evaluateJavaScript is disabled by WebViewOptions.bridgeMode=Disabled"
+                )
+              }
+              if (isUrlLoad) {
+                return@Bindings WebViewJsResult.Unsupported(
+                  "WASM evaluateJavaScript is best-effort and is not supported for url iframes (cross-origin isolation blocks evaluation)"
+                )
+              }
+
+              val targetWindow = iframe.contentWindow
+                ?: return@Bindings WebViewJsResult.Unsupported("WASM iframe is not ready")
+
+              suspendCancellableCoroutine { continuation ->
+                val id = (++evalSeq).toString()
+
+                pendingEval[id] = { result ->
+                  if (continuation.isActive) {
+                    continuation.resume(result)
+                  }
+                }
+                continuation.invokeOnCancellation {
+                  pendingEval.remove(id)
+                }
+
+                val request = buildEvalRequest(id, script)
+                // srcdoc has an opaque origin; targetOrigin must be "*".
+                targetWindow.postMessage(request.toJsString(), "*")
+              }
+            },
+            reload = {
+              // Best-effort no-op for now; platform-specific evaluation/navigation is implemented in T032.
+            },
+            goBack = { false },
+            goForward = { false }
+          )
+        )
+      }
+
+      onDispose {
+        impl?.detach()
+      }
+    }
+
+    // Lifecycle: always attach load/error handlers; attach message handler only when bridge is enabled.
+    DisposableEffect(Unit) {
+      // Load finished callback
+      val loadHandler: (Event) -> Unit = {
+        latestCallbacks.onLoadFinished?.invoke()
+      }
+      iframe.addEventListener("load", loadHandler)
+
+      // Error handler
+      val errorHandler: (Event) -> Unit = {
+        latestCallbacks.onLoadError?.invoke("Failed to load content")
+      }
+      iframe.addEventListener("error", errorHandler)
+
+      onDispose {
+        iframe.removeEventListener("load", loadHandler)
+        iframe.removeEventListener("error", errorHandler)
+      }
+    }
+
+    if (jsToComposeEnabled || composeToJsEnabled) {
+      DisposableEffect(jsToComposeEnabled, composeToJsEnabled) {
+        val messageHandler: (Event) -> Unit = messageHandler@{ event ->
+          val messageEvent = event as? MessageEvent ?: return@messageHandler
+          val expectedSource = iframe.contentWindow
+          if (expectedSource == null || messageEvent.source != expectedSource) return@messageHandler
+
+          val raw = messageEvent.data?.toString() ?: "null"
+
+          if (jsToComposeEnabled) {
+            // JS→Compose bridge payloads (ignore internal eval messages).
+            val isEvalMessage = raw.startsWith(EVAL_REQUEST_PREFIX) ||
+              raw.startsWith(EVAL_RESULT_PREFIX) ||
+              raw.startsWith(EVAL_ERROR_PREFIX)
+            if (!isEvalMessage) {
+              latestCallbacks.onScriptResult?.invoke(unwrapBridgeMessage(raw))
+            }
+          }
+
+          if (composeToJsEnabled) {
+            val evalResult = parseEvalResponse(raw)
+            if (evalResult != null) {
+              val resume = pendingEval.remove(evalResult.id)
+              resume?.invoke(evalResult.result)
+            }
+          }
+        }
+        window.addEventListener("message", messageHandler)
+
+        onDispose {
+          window.removeEventListener("message", messageHandler)
+          if (!composeToJsEnabled) {
+            pendingEval.clear()
+          }
+        }
+      }
+    }
+
+    LaunchedEffect(Unit) {
+      when (content) {
+        is WebViewContent.Url -> {
+          val targetUrl = content.url
           if (setUrlIfChangedJs(iframe, targetUrl)) {
             latestCallbacks.onLoadStarted?.invoke()
           }
         }
-      }
-      is WebViewContent.Html -> {
-        currentUrl = null
-        // Build HTML with optional base URL and any required injected scripts
-        val htmlWithBridge = buildHtmlForSrcDoc(
-          html = content.htmlContent,
-          baseUrl = content.baseUrl,
-          includeJsToComposeBridge = jsToComposeEnabled,
-          includeEvalSupport = composeToJsEnabled,
-        )
-        // Attempt to set srcdoc; will be a no-op if same as last
-        if (setSrcDocIfChangedJs(iframe, htmlWithBridge)) {
-          latestCallbacks.onLoadStarted?.invoke()
+        is WebViewContent.Html -> {
+          val htmlWithBridge = buildHtmlForSrcDoc(
+            html = content.htmlContent,
+            baseUrl = content.baseUrl,
+            includeJsToComposeBridge = jsToComposeEnabled,
+            includeEvalSupport = composeToJsEnabled,
+          )
+          if (setSrcDocIfChangedJs(iframe, htmlWithBridge)) {
+            latestCallbacks.onLoadStarted?.invoke()
+          }
         }
       }
     }
-  }
 
-  WebElementView(
-    factory = { iframe },
-    modifier = modifier,
-    update = { /* content changes handled by LaunchedEffect(contentKey) */ }
-  )
+    DisposableEffect(contentKey) {
+      val syncId = startCanvasBackgroundSyncJs(iframe)
+      onDispose {
+        stopCanvasBackgroundSyncJs(syncId)
+      }
+    }
+
+    WebElementView(
+      factory = { iframe },
+      modifier = modifier,
+      update = { /* content changes handled by key(contentKey) */ }
+    )
+  }
 }
 
 // Helper to inject bridge script and base URL into provided HTML safely for srcdoc
@@ -401,3 +409,69 @@ private external fun setUrlIfChangedJs(el: HTMLIFrameElement, url: String): Bool
 @OptIn(ExperimentalWasmJsInterop::class)
 @JsFun("(el, html) => { const h = String(html); const prev = (el.dataset && el.dataset.cmpwvHtml) || null; if (prev === h) return false; if (el.dataset) el.dataset.cmpwvHtml = h; el.removeAttribute('src'); el.srcdoc = h; return true; }")
 private external fun setSrcDocIfChangedJs(el: HTMLIFrameElement, html: String): Boolean
+
+// Ensures Skiko's WebGL canvas context retains its drawing buffer when Compose is idle.
+// When an active OOPIF iframe renders alongside Skiko WebGL, Chromium's compositor composites
+// on every frame. Without preserveDrawingBuffer: true, the browser discards the WebGL canvas
+// buffer on idle, causing non-iframe areas (TopAppBar, navigation, buttons) to appear white.
+@OptIn(ExperimentalWasmJsInterop::class)
+@JsFun("""() => {
+  if (typeof HTMLCanvasElement !== 'undefined' && !HTMLCanvasElement.prototype.__cmpwv_preserve_patched) {
+    HTMLCanvasElement.prototype.__cmpwv_preserve_patched = true;
+    const origGetContext = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function(type, attributes) {
+      if (type === 'webgl2' || type === 'webgl') {
+        attributes = attributes || {};
+        attributes.preserveDrawingBuffer = true;
+      }
+      return origGetContext.call(this, type, attributes);
+    };
+    return true;
+  }
+  return false;
+}""")
+private external fun installPreserveDrawingBufferPatchJs(): Boolean
+
+private val isPreserveDrawingBufferPatched: Boolean = installPreserveDrawingBufferPatchJs()
+
+// In software-compositor mode (e.g. headless tests running with --disable-gpu), Chromium's
+// Viz software compositor drops the WebGL canvas layer when compositing alongside cross-process
+// OOPIF iframes during idle periods, exposing the container background. By continuously mirroring
+// the WebGL canvas to the container's background-image while a WebView is mounted, the UI
+// remains 100% visible even when the software compositor skips drawing the WebGL canvas layer.
+@OptIn(ExperimentalWasmJsInterop::class)
+@JsFun("""(iframe) => {
+  const sync = () => {
+    const canvas = (document.body.shadowRoot && document.body.shadowRoot.querySelector('canvas')) || document.querySelector('canvas');
+    const rootDiv = canvas ? canvas.parentElement : null;
+    if (canvas && rootDiv) {
+      try {
+        const dataUrl = canvas.toDataURL();
+        if (dataUrl && dataUrl.length > 100) {
+          rootDiv.style.backgroundImage = 'url(' + dataUrl + ')';
+          rootDiv.style.backgroundRepeat = 'no-repeat';
+          rootDiv.style.backgroundSize = '100% 100%';
+        }
+      } catch (e) {}
+    }
+  };
+  iframe.addEventListener('load', () => {
+    setTimeout(sync, 50);
+    setTimeout(sync, 250);
+    setTimeout(sync, 500);
+  });
+  const intervalId = setInterval(sync, 250);
+  sync();
+  return intervalId;
+}""")
+private external fun startCanvasBackgroundSyncJs(iframe: HTMLIFrameElement): Int
+
+@OptIn(ExperimentalWasmJsInterop::class)
+@JsFun("""(intervalId) => {
+  clearInterval(intervalId);
+  const canvas = (document.body.shadowRoot && document.body.shadowRoot.querySelector('canvas')) || document.querySelector('canvas');
+  if (canvas && canvas.parentElement) {
+    canvas.parentElement.style.backgroundImage = '';
+  }
+}""")
+private external fun stopCanvasBackgroundSyncJs(intervalId: Int)

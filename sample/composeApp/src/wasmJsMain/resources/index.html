@@ -14,6 +14,18 @@
           overflow: hidden;
       }
   </style>
+  <script>
+    if (typeof HTMLCanvasElement !== 'undefined') {
+      const origGetContext = HTMLCanvasElement.prototype.getContext;
+      HTMLCanvasElement.prototype.getContext = function(type, attributes) {
+        if (type === 'webgl2' || type === 'webgl') {
+          attributes = attributes || {};
+          attributes.preserveDrawingBuffer = true;
+        }
+        return origGetContext.call(this, type, attributes);
+      };
+    }
+  </script>
 </head>
 <body></body>
 <script type="application/javascript" src="composeApp.js"></script>

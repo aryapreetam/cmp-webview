@@ -10,6 +10,7 @@ plugins {
   alias(libs.plugins.compose)
   alias(libs.plugins.compose.compiler)
   alias(libs.plugins.dokka)
+  alias(libs.plugins.binary.compatibility.validator)
 }
 
 kotlin {
@@ -18,7 +19,7 @@ kotlin {
   androidLibrary {
     namespace = "io.github.aryapreetam.cmpwebview"
     compileSdk = 35
-    minSdk = 23
+    minSdk = 24
     withHostTest {  }
     androidResources {
       enable = true
