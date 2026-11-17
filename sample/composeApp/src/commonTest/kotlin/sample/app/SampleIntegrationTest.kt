@@ -8,6 +8,19 @@ import kotlin.test.Test
 
 class SampleIntegrationTest : E2ETestLifecycle {
 
+  override suspend fun E2ETestScope.beforeEach() {
+    if (hasVisibleNode("back_button")) {
+      click("back_button")
+    }
+    assertVisible("CMP WebView Demo")
+  }
+
+  override suspend fun E2ETestScope.afterEach() {
+    if (hasVisibleNode("back_button")) {
+      click("back_button")
+    }
+  }
+
   @OptIn(InternalParikshanApi::class)
   private suspend fun E2ETestScope.waitForLoaded(timeoutMs: Long = 25_000L) {
     executeParallel {

@@ -132,8 +132,8 @@ sealed class DemoScreen(
   object LoadingState : DemoScreen("Loading States", "Custom loading indicators", "loading-state")
 
   companion object {
-    val coreScreens = listOf(UrlLoading, HtmlLoading, BridgeDemo, ErrorHandling)
-    val advancedScreens = listOf(ComposeToJsBridgeTest, ContentSwitching, CustomHeaders, MultiWebView, LoadingState)
+    val coreScreens = listOf(UrlLoading, HtmlLoading, ContentSwitching, MultiWebView, BridgeDemo, ErrorHandling)
+    val advancedScreens = listOf(ComposeToJsBridgeTest, CustomHeaders, LoadingState)
     val allScreens = coreScreens + advancedScreens
   }
 }

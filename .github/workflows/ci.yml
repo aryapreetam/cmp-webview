@@ -233,6 +233,10 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
+      - name: Install WebKitGTK (Linux JVM WebView dependency)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-0
       - name: Setup Desktop E2E Environment
         uses: aryapreetam/parikshan-desktop-action@v1
         with:
@@ -281,6 +285,7 @@ jobs:
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 29
+          arch: x86_64
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
