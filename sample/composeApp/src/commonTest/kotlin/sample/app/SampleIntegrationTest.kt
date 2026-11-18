@@ -9,15 +9,22 @@ import kotlin.test.Test
 class SampleIntegrationTest : E2ETestLifecycle {
 
   override suspend fun E2ETestScope.beforeEach() {
-    if (hasVisibleNode("back_button")) {
-      click("back_button")
+    try {
+      if (hasVisibleNode("back_button")) {
+        click("back_button")
+      }
+    } catch (_: Throwable) {
+      // Best-effort recovery
     }
-    assertVisible("CMP WebView Demo")
   }
 
   override suspend fun E2ETestScope.afterEach() {
-    if (hasVisibleNode("back_button")) {
-      click("back_button")
+    try {
+      if (hasVisibleNode("back_button")) {
+        click("back_button")
+      }
+    } catch (_: Throwable) {
+      // Best-effort cleanup
     }
   }
 

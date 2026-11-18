@@ -325,6 +325,14 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
       - name: List Available Simulators
         run: xcrun simctl list devices available
+      - name: Pre-boot iOS Simulator
+        run: |
+          DEVICE_ID=$(xcrun simctl list devices available -j | jq -r '.devices[] | select(type == "array") | .[] | select(.name == "iPhone 16" or .name == "iPhone 17") | .udid' | head -n 1)
+          if [ -n "$DEVICE_ID" ]; then
+            echo "Pre-booting simulator $DEVICE_ID"
+            xcrun simctl boot "$DEVICE_ID" || true
+            xcrun simctl bootstatus "$DEVICE_ID" -b || true
+          fi
       - name: Pre-compile Kotlin Native Framework
         run: |
           ./gradlew :sample:composeApp:linkDebugFrameworkIosSimulatorArm64 \
@@ -335,6 +343,7 @@ jobs:
           ./gradlew :sample:composeApp:e2eIosTest \
             -Dparikshan.video.enabled=true \
             --no-configuration-cache \
+            --no-build-cache \
             -Dorg.gradle.jvmargs="-Xmx6g -XX:+UseParallelGC" \
             -Dparikshan.xcodebuild.timeout=1800
       - name: Upload iOS Artifacts
